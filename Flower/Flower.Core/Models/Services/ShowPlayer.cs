@@ -1,29 +1,29 @@
 ﻿// Flower.Core/Services/ShowPlayer.cs
 using Flower.Core.Cmds;          // your command abstractions
 using Flower.Core.Models;
-using Flower.Core.Services;
+using Flower.Core.Models.Services;
 
 public sealed class ShowPlayer
 {
     private readonly ShowScheduler _scheduler;
     private readonly ICommandRegistry _commands;
-    private readonly IReadOnlyDictionary<int, FlowerUnit> _flowers;
     private CancellationTokenSource? _cts;
 
     public ShowPlayer(
         ShowScheduler scheduler,
-        ICommandRegistry commands,
-        IReadOnlyDictionary<int, FlowerUnit> flowers)
+        ICommandRegistry commands)
     {
         _scheduler = scheduler;
         _commands = commands;
-        _flowers = flowers;
     }
 
     public Task PlayAsync(ShowProject project)
     {
         Stop();
         _cts = new CancellationTokenSource();
+
+        // flowers
+        var flowers = project.Flowers;
 
         // flatten + sort timed events
         var logical = project.Tracks
@@ -38,8 +38,9 @@ public sealed class ShowPlayer
             var ev = x.Ev.Event;                // ShowEvent (FlowerId, CmdId, Args)
             var at = x.Ev.AtMs;
 
-            if (!_flowers.TryGetValue(ev.flowerId, out var flower))
-                throw new InvalidOperationException($"Unknown flower id {ev.flowerId}.");
+            var flower = flowers.FirstOrDefault(f => f.Id == ev.flowerId);
+            if (flower == null)
+                throw new InvalidOperationException($"Flower with ID {ev.flowerId} not found in project.");
 
             var cmd = _commands.GetById(ev.cmdId);
 

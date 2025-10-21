@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading.Channels;
 using System.Threading.Tasks;
 
-namespace Flower.Core.Services
+namespace Flower.Core.Models.Services
 {
     public sealed class SerialPortService : ISerialPort
     {

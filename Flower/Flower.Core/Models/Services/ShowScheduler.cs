@@ -2,7 +2,7 @@
 using System.Diagnostics;
 using Flower.Core.Abstractions;
 using Flower.Core.Models;
-using Flower.Core.Services;
+using Flower.Core.Models.Services;
 
 public sealed class ShowScheduler
 {

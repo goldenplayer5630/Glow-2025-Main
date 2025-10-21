@@ -5,7 +5,7 @@ using Flower.App.Views;
 using Flower.Core.Abstractions;
 using Flower.Core.Cmds;
 using Flower.Core.Cmds.BuiltIn;
-using Flower.Core.Services;
+using Flower.Core.Models.Services;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
@@ -14,11 +14,12 @@ using System.Threading;
 
 namespace Flower.App.Desktop;
 
-internal static class Program
+public class Program : Application
 {
     [STAThread]
     public static int Main(string[] args)
     {
+        // ----- RUNTIME path with DI -----
         var host = Host.CreateDefaultBuilder(args)
             .ConfigureServices(s =>
             {
@@ -33,16 +34,20 @@ internal static class Program
                 s.AddSingleton<IFlowerCommand, MotorOpenLedRampCmd>();
                 s.AddSingleton<IFlowerCommand, MotorCloseLedRamp>();
                 s.AddSingleton<ICommandRegistry, CommandRegistry>();
-                // UI
-                s.AddSingleton<MainViewModel>();
-                s.AddSingleton<MainWindow>();
-                s.AddSingleton<MainView>();
-                s.AddSingleton<IAppViewModel, AppViewModel>();
 
+                // UI / VMs
+                s.AddSingleton<IAppViewModel, AppViewModel>();
+                s.AddSingleton<ShowCreatorViewModel>();
+
+
+                // Views (runtime via DI; previewer uses parameterless ctors)
+                s.AddSingleton<MainWindow>();
+                s.AddTransient<ShowCreatorView>();
             })
             .Build();
 
-        var builder = BuildAvaloniaApp(host);
+        // ❗ Use the *renamed* runtime builder to avoid previewer confusion
+        var builder = BuildAvaloniaAppWithHost(host);
 
         if (args.Contains("--drm"))
         {
@@ -53,8 +58,16 @@ internal static class Program
         return builder.StartWithClassicDesktopLifetime(args);
     }
 
-    // ✅ use the factory overload to construct App with your host
-    public static AppBuilder BuildAvaloniaApp(IHost host) =>
+    // ✅ PREVIEWER expects exactly this method: public static AppBuilder BuildAvaloniaApp()
+    // Keep ONLY this parameterless version with this exact name.
+    public static AppBuilder BuildAvaloniaApp()
+        => AppBuilder.Configure<Flower.App.App>() // <-- your App class (namespace matters!)
+            .UsePlatformDetect()
+            .LogToTrace()
+            .UseReactiveUI();
+
+    // ✅ RUNTIME builder renamed so the previewer won't pick it up by name
+    public static AppBuilder BuildAvaloniaAppWithHost(IHost host) =>
         AppBuilder.Configure(() => new Flower.App.App(host))
                   .UsePlatformDetect()
                   .WithInterFont()
