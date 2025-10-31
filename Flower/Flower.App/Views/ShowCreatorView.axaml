@@ -1,0 +1,155 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:Flower.App.ViewModels"
+             xmlns:m="clr-namespace:Flower.Core.Models;assembly=Flower.Core"
+             x:Class="Flower.App.Views.ShowCreatorView"
+             x:DataType="vm:ShowCreatorViewModel">
+
+  <DockPanel>
+
+    <!-- Toolbar -->
+    <StackPanel DockPanel.Dock="Top" Orientation="Horizontal" Spacing="8" Margin="12">
+      <Button Content="New"    Command="{Binding NewShowProjectCommand}"/>
+      <Button Content="Open"   Command="{Binding LoadShowProjectCommand}"/>
+      <Button Content="Save"   Command="{Binding SaveShowProjectCommand}"/>
+      <Separator Width="16"/>
+      <Button Content="Edit Project…" Command="{Binding EditShowProjectPropertiesCommand}"/>
+      <Separator Width="16"/>
+      <Button Content="Preview ▶" Command="{Binding PreviewShowCommand}"/>
+    </StackPanel>
+
+    <!-- Left rail: Flowers / ShowEvents -->
+    <Grid DockPanel.Dock="Left" Width="280" RowDefinitions="Auto,*,Auto,*" Margin="12" ColumnDefinitions="*">
+      <!-- Flowers -->
+      <TextBlock Text="Flowers" FontWeight="Bold" Margin="0,0,0,6"/>
+      <Border Grid.Row="1" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="1" Padding="6">
+        <StackPanel>
+          <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="6" Margin="0,0,0,6">
+            <Button Content="Add"    Command="{Binding AddFlowerUnitCommand}" MinWidth="70"/>
+            <Button Content="Remove" Command="{Binding RemoveFlowerUnitCommand}" MinWidth="70"/>
+          </StackPanel>
+          <!-- FIX: ItemsSource + typed template -->
+          <ListBox ItemsSource="{Binding ShowProject.Flowers}">
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="m:FlowerUnit">
+                <StackPanel Orientation="Vertical" Spacing="2">
+                  <TextBlock Text="{Binding Id}" FontWeight="SemiBold"/>
+                  <TextBlock Text="{Binding Category}" FontSize="12" Opacity="0.75"/>
+                </StackPanel>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </StackPanel>
+      </Border>
+
+      <!-- Show Events -->
+      <TextBlock Grid.Row="2" Text="Show Events (reusable)" FontWeight="Bold" Margin="0,12,0,6"/>
+      <Border Grid.Row="3" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" BorderThickness="1" Padding="6">
+        <StackPanel>
+          <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="6" Margin="0,0,0,6">
+            <Button Content="Add"    Command="{Binding AddShowEvent}" MinWidth="70"/>
+            <Button Content="Remove" Command="{Binding RemoveShowEvent}" MinWidth="70"/>
+          </StackPanel>
+
+          <!-- FIX: ItemsSource + typed template -->
+          <ListBox ItemsSource="{Binding AvailableShowEvents}">
+            <ListBox.ItemTemplate>
+              <DataTemplate x:DataType="m:ShowEvent">
+                <StackPanel Orientation="Vertical" Spacing="2">
+                  <TextBlock Text="{Binding flowerId, StringFormat=Flower {0}}" FontWeight="SemiBold"/>
+                  <TextBlock Text="{Binding cmdId,    StringFormat=Cmd {0}}"    FontSize="12" />
+                  <TextBlock Text="{Binding Args}" FontSize="12" Opacity="0.7"/>
+                </StackPanel>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </StackPanel>
+      </Border>
+    </Grid>
+
+    <!-- Right rail: Project -->
+    <Grid DockPanel.Dock="Right" Width="320" Margin="12" RowDefinitions="Auto,Auto,Auto,*">
+      <TextBlock Text="Project" FontWeight="Bold" Margin="0,0,0,6"/>
+      <StackPanel Orientation="Vertical" Spacing="8">
+        <TextBlock Text="File Path"/>
+        <TextBox Text="{Binding FilePath}" Watermark="path/to/show.json"/>
+        <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,8,0,0">
+          <Button Content="Save" Command="{Binding SaveShowProjectCommand}" MinWidth="80"/>
+          <Button Content="Open" Command="{Binding LoadShowProjectCommand}" MinWidth="80"/>
+        </StackPanel>
+      </StackPanel>
+      <Separator Grid.Row="2" Margin="0,12,0,12"/>
+      <StackPanel Grid.Row="3" Spacing="6">
+        <TextBlock Text="Tracks" FontWeight="Bold"/>
+        <StackPanel Orientation="Horizontal" Spacing="8" Margin="0,4,0,8">
+          <Button Content="Add Track"    Command="{Binding AddShowTrackCommand}"/>
+          <Button Content="Remove Track" Command="{Binding RemoveShowTrackCommand}"/>
+        </StackPanel>
+        <!-- FIX: ItemsSource + typed template -->
+        <ItemsControl ItemsSource="{Binding ShowProject.Tracks}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="m:ShowTrack">
+              <StackPanel>
+                <TextBlock Text="{Binding Name}" FontWeight="SemiBold"/>
+                <TextBlock Text="{Binding LoopMs, StringFormat=Loop: {0} ms}" FontSize="12" Opacity="0.7"/>
+              </StackPanel>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </Grid>
+
+    <!-- Center: "Timeline-like" track list with event chips -->
+    <ScrollViewer Margin="12">
+      <StackPanel Spacing="12">
+
+        <!-- timeline header (simple scale text; upgrade later to real ticks) -->
+        <Border Padding="8" Background="{DynamicResource ThemeControlLowBrush}" CornerRadius="4">
+          <TextBlock Text="Timeline (ms) — visual scale placeholder" FontStyle="Italic" Opacity="0.7"/>
+        </Border>
+
+        <!-- FIX: ItemsSource + typed template -->
+        <ItemsControl ItemsSource="{Binding ShowProject.Tracks}">
+          <ItemsControl.ItemTemplate>
+            <DataTemplate x:DataType="m:ShowTrack">
+              <StackPanel>
+                <!-- Track header -->
+                <DockPanel Margin="0,12,0,6">
+                  <TextBlock DockPanel.Dock="Left" Text="{Binding Name}" FontWeight="Bold"/>
+                  <StackPanel DockPanel.Dock="Right" Orientation="Horizontal" Spacing="6">
+                    <!-- accessing parent VM is fine; keep as-is -->
+                    <Button Content="Add Event"    Command="{Binding $parent[vm:ShowCreatorViewModel].AddTrackEventCommand}"/>
+                    <Button Content="Remove Event" Command="{Binding $parent[vm:ShowCreatorViewModel].RemoveTrackEventCommand}"/>
+                  </StackPanel>
+                </DockPanel>
+
+                <!-- Track body: events as chips -->
+                <Border BorderThickness="1" BorderBrush="{DynamicResource SystemControlForegroundBaseLowBrush}" Padding="8" CornerRadius="4">
+                  <ScrollViewer HorizontalScrollBarVisibility="Auto">
+                    <!-- FIX: ItemsSource + typed template -->
+                    <ItemsControl ItemsSource="{Binding Events}">
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate x:DataType="m:TrackEvent">
+                          <Border Padding="6,4" CornerRadius="4"
+                                  Background="{DynamicResource ThemeAccentBrush}"
+                                  ToolTip.Tip="{Binding AtMs, StringFormat=At {0} ms}">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                              <TextBlock Text="{Binding AtMs}" FontWeight="Bold"/>
+                              <TextBlock Text="{Binding Event.flowerId, StringFormat=F:{0}}"/>
+                              <TextBlock Text="{Binding Event.cmdId,    StringFormat=C:{0}}"/>
+                            </StackPanel>
+                          </Border>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </ScrollViewer>
+                </Border>
+              </StackPanel>
+            </DataTemplate>
+          </ItemsControl.ItemTemplate>
+        </ItemsControl>
+      </StackPanel>
+    </ScrollViewer>
+
+  </DockPanel>
+</UserControl>

@@ -1,0 +1,44 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:Flower.App.ViewModels"
+        x:Class="Flower.App.Windows.MainWindow"
+        x:DataType="vm:AppViewModel"
+        Width="900" Height="600" Title="Flower Show Controller">
+
+	<Grid RowDefinitions="Auto,Auto,*,Auto"
+		  ColumnDefinitions="Auto,*,Auto"
+		  Margin="16">
+
+		<!-- Port Row -->
+		<TextBlock Text="Port:" VerticalAlignment="Center"/>
+		<ComboBox Grid.Column="1" Width="260" Margin="8,0"
+				  ItemsSource="{Binding Ports}"
+				  SelectedItem="{Binding SelectedPort}"/>
+		<StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8">
+<!--			<Button Content="Show Creator" Command="{Binding NavigateShowCreator}" />-->
+			<Button Content="Refresh" Command="{Binding RefreshPortsCommand}" Width="90"/>
+			<Button Content="Connect" Command="{Binding ConnectCommand}" Width="90"/>
+		</StackPanel>
+
+		<!-- Controls Row -->
+		<StackPanel Grid.Row="1" Grid.ColumnSpan="3" Orientation="Horizontal" Spacing="8" Margin="0,12">
+			<Button Content="Show Creator" Command="{Binding OpenShowCreatorCommand}" />
+			<Button Content="Load Show" Command="{Binding LoadShowCommand}" Width="120"/>
+			<Button Content="Play"      Command="{Binding PlayCommand}"      Width="120"/>
+			<Button Content="Stop"      Command="{Binding StopCommand}"      Width="120"/>
+		</StackPanel>
+
+		<!-- Monitor -->
+		<TextBox Grid.Row="2" Grid.ColumnSpan="3"
+				 Text="{Binding MonitorText}"
+				 AcceptsReturn="True"
+				 IsReadOnly="True"
+				 ScrollViewer.VerticalScrollBarVisibility="Auto"/>
+
+		<!-- Status Bar -->
+		<TextBlock Grid.Row="3" Grid.ColumnSpan="3" Text="{Binding StatusText}"/>
+	
+		<ContentControl Content="{Binding CurrentPage}" Margin="12"/>
+
+	</Grid>
+</Window>
