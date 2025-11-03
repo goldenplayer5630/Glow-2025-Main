@@ -1,11 +1,12 @@
 ﻿using Flower.Core.Enums;
+using Flower.Core.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Flower.Core.Cmds
+namespace Flower.Core.Abstractions.Commands
 {
     public interface IFlowerCommand
     {
@@ -15,6 +16,9 @@ namespace Flower.Core.Cmds
         /// Human name for UI ("Set LED", "Open Motor")
         string DisplayName { get; }
 
+        /// Available arguments for this command
+        IReadOnlyDictionary<string, object?>? args { get; } // can be null/empty if no args
+
         /// Which categories support this command
         IReadOnlyCollection<FlowerCategory> SupportedCategories { get; }
 
@@ -23,6 +27,8 @@ namespace Flower.Core.Cmds
 
         /// Build one or more serial frames to emit for this command on a given flower id.
         /// A frame is already ASCII-encoded (e.g., "3/LED:120\n").
-        IReadOnlyList<byte[]> BuildFrames(int flowerId, FlowerCategory category, IReadOnlyDictionary<string, object?> args);
+        IReadOnlyList<byte[]> BuildPayload(int flowerId, FlowerCategory category, IReadOnlyDictionary<string, object?> args);
+
+        Func<FlowerUnit, FlowerUnit>? StateOnAck(FlowerCategory category, IReadOnlyDictionary<string, object?> args);
     }
 }

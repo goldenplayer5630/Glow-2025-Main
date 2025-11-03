@@ -11,6 +11,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <AvaloniaXaml Remove="Dialogs\**" />
+    <Compile Remove="Dialogs\**" />
+    <EmbeddedResource Remove="Dialogs\**" />
+    <None Remove="Dialogs\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Avalonia" Version="$(AvaloniaVersion)" />
     <PackageReference Include="Avalonia.Themes.Fluent" Version="$(AvaloniaVersion)" />
     <PackageReference Include="Avalonia.Fonts.Inter" Version="$(AvaloniaVersion)" />
@@ -28,12 +35,14 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Update="Views\AddOrUpdateFlowerView.axaml.cs">
+      <DependentUpon>AddOrUpdateFlowerView.axaml</DependentUpon>
+    </Compile>
     <Compile Update="Views\SettingsView.axaml.cs">
       <DependentUpon>SettingsView.axaml</DependentUpon>
     </Compile>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Dialogs\" />
+    <Compile Update="Windows\AddOrUpdateFlowerWindow.axaml.cs">
+      <DependentUpon>AddOrUpdateFlowerWindow.axaml</DependentUpon>
+    </Compile>
   </ItemGroup>
 </Project>

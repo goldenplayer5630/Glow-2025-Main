@@ -1,6 +1,7 @@
 ﻿<UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:Flower.App.ViewModels"
+             xmlns:r="clr-namespace:Flower.Core.Records;assembly=Flower.Core"
              xmlns:m="clr-namespace:Flower.Core.Models;assembly=Flower.Core"
              x:Class="Flower.App.Views.ShowCreatorView"
              x:DataType="vm:ShowCreatorViewModel">
@@ -54,10 +55,10 @@
           <!-- FIX: ItemsSource + typed template -->
           <ListBox ItemsSource="{Binding AvailableShowEvents}">
             <ListBox.ItemTemplate>
-              <DataTemplate x:DataType="m:ShowEvent">
+              <DataTemplate x:DataType="r:ShowEvent">
                 <StackPanel Orientation="Vertical" Spacing="2">
-                  <TextBlock Text="{Binding flowerId, StringFormat=Flower {0}}" FontWeight="SemiBold"/>
-                  <TextBlock Text="{Binding cmdId,    StringFormat=Cmd {0}}"    FontSize="12" />
+                  <TextBlock Text="{Binding FlowerId, StringFormat=Flower {0}}" FontWeight="SemiBold"/>
+                  <TextBlock Text="{Binding CmdId,    StringFormat=Cmd {0}}"    FontSize="12" />
                   <TextBlock Text="{Binding Args}" FontSize="12" Opacity="0.7"/>
                 </StackPanel>
               </DataTemplate>
@@ -129,14 +130,14 @@
                     <!-- FIX: ItemsSource + typed template -->
                     <ItemsControl ItemsSource="{Binding Events}">
                       <ItemsControl.ItemTemplate>
-                        <DataTemplate x:DataType="m:TrackEvent">
+                        <DataTemplate x:DataType="r:TrackEvent">
                           <Border Padding="6,4" CornerRadius="4"
                                   Background="{DynamicResource ThemeAccentBrush}"
                                   ToolTip.Tip="{Binding AtMs, StringFormat=At {0} ms}">
                             <StackPanel Orientation="Horizontal" Spacing="8">
                               <TextBlock Text="{Binding AtMs}" FontWeight="Bold"/>
-                              <TextBlock Text="{Binding Event.flowerId, StringFormat=F:{0}}"/>
-                              <TextBlock Text="{Binding Event.cmdId,    StringFormat=C:{0}}"/>
+                              <TextBlock Text="{Binding Event.FlowerId, StringFormat=F:{0}}"/>
+                              <TextBlock Text="{Binding Event.CmdId,    StringFormat=C:{0}}"/>
                             </StackPanel>
                           </Border>
                         </DataTemplate>

@@ -1,5 +1,6 @@
 ﻿// Flower.App/ViewModels/ShowCreatorViewModel.cs
 using Flower.Core.Models;
+using Flower.Core.Records;
 using ReactiveUI;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;

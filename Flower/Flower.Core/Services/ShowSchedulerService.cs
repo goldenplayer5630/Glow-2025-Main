@@ -1,15 +1,15 @@
-﻿// Flower.Core/Services/ShowScheduler.cs
+﻿// ShowScheduler.cs (frame-based)
+using Flower.Core.Abstractions.Commands;
+using Flower.Core.Abstractions.Services;
+using Flower.Core.Records;
 using System.Diagnostics;
-using Flower.Core.Abstractions;
-using Flower.Core.Models;
-using Flower.Core.Models.Services;
 
-public sealed class ShowScheduler
+public sealed class ShowSchedulerService : IShowSchedulerService
 {
-    private readonly ISerialPort _serial;
+    private readonly ITransport _transport;
     private volatile bool _running;
 
-    public ShowScheduler(ISerialPort serial) => _serial = serial;
+    public ShowSchedulerService(ITransport transport) => _transport = transport;
 
     public async Task PlayLoopResolvedAsync(
         IReadOnlyList<ShowEventResolved> events, int loopMs, CancellationToken ct)
@@ -28,7 +28,7 @@ public sealed class ShowScheduler
                 if (wait > 0) await Task.Delay(wait, ct);
 
                 foreach (var frame in ev.Frames)
-                    await _serial.EnqueueAsync(frame, ct);
+                    await _transport.WriteAsync(frame, ct);   // ← fix here
             }
 
             if (loopMs > 0)
@@ -41,6 +41,5 @@ public sealed class ShowScheduler
         }
     }
 
-
-    // (keep your existing PlayLoopAsync(...) if you still use it elsewhere)
+    public void Stop() => _running = false;
 }

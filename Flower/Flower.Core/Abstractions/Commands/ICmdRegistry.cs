@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Flower.Core.Cmds
+namespace Flower.Core.Abstractions.Commands
 {
     public interface ICommandRegistry
     {

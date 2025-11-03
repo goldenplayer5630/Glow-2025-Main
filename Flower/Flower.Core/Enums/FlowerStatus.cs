@@ -4,7 +4,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Flower.Core.Models
+namespace Flower.Core.Enums
 {
-    public sealed record TrackEvent(long AtMs, ShowEvent Event);
+    public enum FlowerStatus
+    {
+        Closed,
+        Open,
+        Unknown
+    }
 }

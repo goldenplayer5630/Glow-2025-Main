@@ -1,0 +1,39 @@
+<!-- Flower.App/Windows/AddFlowerWindow.axaml -->
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="clr-namespace:Flower.App.Views"
+        x:Class="Flower.App.Windows.AddFlowerWindow"
+        Title="Add Flower"
+        Width="560" Height="360"
+        MinWidth="560" MinHeight="360"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner">
+
+  <!-- Tablet-friendly buttons (match MainView) -->
+  <Window.Styles>
+    <Style Selector="Button">
+      <Setter Property="FontSize" Value="18"/>
+      <Setter Property="MinHeight" Value="56"/>
+      <Setter Property="MinWidth" Value="140"/>
+      <Setter Property="Padding" Value="16,10"/>
+      <Setter Property="CornerRadius" Value="8"/>
+      <Setter Property="HorizontalContentAlignment" Value="Center"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+  </Window.Styles>
+
+  <Grid RowDefinitions="*,Auto" Margin="16">
+    <!-- The form (already updated to use NumericUpDown/TextBox without InputScope) -->
+    <views:AddFlowerView/>
+
+    <!-- Bottom action row -->
+    <StackPanel Grid.Row="1"
+                Orientation="Horizontal"
+                HorizontalAlignment="Right"
+                Spacing="12"
+                Margin="0,16,0,0">
+      <Button x:Name="CancelButton" Content="Cancel" IsCancel="True"/>
+      <Button x:Name="ConfirmButton"    Content="Confirm"    IsDefault="True"/>
+    </StackPanel>
+  </Grid>
+</Window>

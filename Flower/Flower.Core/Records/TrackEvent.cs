@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Flower.Core.Models.Services
+namespace Flower.Core.Records
 {
-    public sealed record ShowEventResolved(long AtMs, IReadOnlyList<byte[]> Frames);
+    public sealed record TrackEvent(long AtMs, ShowEvent Event);
 }

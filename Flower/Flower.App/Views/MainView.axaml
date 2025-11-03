@@ -1,0 +1,255 @@
+<!-- Flower.App/Views/MainView.axaml -->
+<UserControl
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ac="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls"
+    xmlns:vm="clr-namespace:Flower.App.ViewModels"
+    xmlns:models="clr-namespace:Flower.Core.Models;assembly=Flower.Core"
+    xmlns:conv="clr-namespace:Flower.App.Utilities;assembly=Flower.App"
+    x:Class="Flower.App.Views.MainView"
+    x:DataType="vm:AppViewModel">
+
+  <!-- Tablet-friendly styles -->
+  <UserControl.Styles>
+      <!-- Play = green -->
+        <Style Selector="Button.play">
+          <Setter Property="Background" Value="#179A00"/>
+          <Setter Property="Foreground" Value="White"/>
+          <Setter Property="BorderBrush" Value="#0F6A00"/>
+        </Style>
+        <Style Selector="Button.play:pointerover">
+          <Setter Property="Background" Value="#1FB000"/>
+        </Style>
+        <Style Selector="Button.play:pressed">
+          <Setter Property="Background" Value="#168600"/>
+        </Style>
+        <Style Selector="Button.play:disabled">
+          <Setter Property="Opacity" Value="0.6"/>
+        </Style>
+
+        <!-- Stop = red -->
+        <Style Selector="Button.stop">
+          <Setter Property="Background" Value="#C62828"/>
+          <Setter Property="Foreground" Value="White"/>
+          <Setter Property="BorderBrush" Value="#8E1E1E"/>
+        </Style>
+        <Style Selector="Button.stop:pointerover">
+          <Setter Property="Background" Value="#D32F2F"/>
+        </Style>
+        <Style Selector="Button.stop:pressed">
+          <Setter Property="Background" Value="#B71C1C"/>
+        </Style>
+        <Style Selector="Button.stop:disabled">
+          <Setter Property="Opacity" Value="0.6"/>
+        </Style>
+    <!-- Buttons -->
+    <Style Selector="Button">
+      <Setter Property="FontSize" Value="18"/>
+      <Setter Property="MinHeight" Value="56"/>
+      <Setter Property="MinWidth" Value="140"/>
+      <Setter Property="Padding" Value="16,10"/>
+      <Setter Property="CornerRadius" Value="8"/>
+      <Setter Property="HorizontalContentAlignment" Value="Center"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+
+    <!-- ComboBox -->
+    <Style Selector="ComboBox">
+      <Setter Property="FontSize" Value="18"/>
+      <Setter Property="MinHeight" Value="48"/>
+      <Setter Property="Padding" Value="12,8"/>
+      <Setter Property="MinWidth" Value="220"/>
+      <Setter Property="HorizontalContentAlignment" Value="Center"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+
+    <!-- List items -->
+    <Style Selector="ListBoxItem">
+      <Setter Property="MinHeight" Value="44"/>
+      <Setter Property="Padding" Value="8,6"/>
+      <Setter Property="FontSize" Value="16"/>
+    </Style>
+
+    <Style Selector="TextBlock.header">
+      <Setter Property="FontSize" Value="18"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+  </UserControl.Styles>
+
+    <UserControl.Resources>
+        <conv:ConnectionStatusToBrushConverter x:Key="StatusBrush" />
+    </UserControl.Resources>
+
+
+  <!-- Layout: top serial, middle 3-cols (show | monitor | flowers), bottom status -->
+  <Grid RowDefinitions="Auto,*,Auto" ColumnDefinitions="1.2*,1.8*,2*" Margin="16">
+
+    <!-- ===== Row 0: Port / Serial (full width) ===== -->
+    <Border Grid.Row="0" Grid.ColumnSpan="3" Padding="12" Classes="card">
+      <Grid ColumnDefinitions="Auto,Auto,*,Auto" RowDefinitions="Auto">
+        <TextBlock Grid.Column="0" Text="Port:" VerticalAlignment="Center" FontSize="18"/>
+        <ComboBox  Grid.Column="1" Margin="8,0"
+                   MinWidth="140" Width="180"
+                   Height="55"
+                   ItemsSource="{Binding Ports}"
+                   SelectedItem="{Binding SelectedPort}"/>
+        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="12">
+          <Button Content="Refresh" Command="{Binding RefreshPortsCommand}"/>
+          <Button Content="Connect" Command="{Binding ConnectCommand}"/>
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <!-- ===== Row 1: Show (left) + Monitor (right) close together ===== -->
+    <Grid Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
+            ColumnDefinitions="160,8,*">
+        <!-- Show buttons (left) -->
+        <Border Grid.Column="0" Padding="12" Classes="card">
+        <StackPanel Spacing="12">
+            <Button Content="Creator" Command="{Binding OpenShowCreatorCommand}"/>
+            <Button Content="Load Show"    Command="{Binding LoadShowCommand}"/>
+            <Button Content="Play"         Command="{Binding PlayCommand}" Classes="play"/>
+            <Button Content="Stop"         Command="{Binding StopCommand}" Classes="stop"/>
+        </StackPanel>
+        </Border>
+
+        <!-- 8px spacer is the middle column -->
+
+        <!-- Monitor (right) -->
+        <Border Grid.Column="2" Padding="12" Classes="card">
+        <TextBox Text="{Binding MonitorText}"
+                    AcceptsReturn="True"
+                    IsReadOnly="True"
+                    FontSize="16"
+                    ScrollViewer.VerticalScrollBarVisibility="Auto"/>
+        </Border>
+    </Grid>
+
+
+    <!-- ===== Row 1, Col 2: Flowers panel ===== -->
+    <Border Grid.Row="1" Grid.Column="2" Padding="12" Classes="card">
+      <Grid RowDefinitions="Auto,*,Auto">
+        <!-- Header + actions in 3x2 grid -->
+        <Grid RowDefinitions="Auto,*,Auto">
+          <!-- Header + actions in 3x2 grid -->
+          <Grid Margin="0,0,0,12"
+                ColumnDefinitions="*,*,*"
+                RowDefinitions="Auto,Auto">
+
+            <!-- Row 0 -->
+            <Button Grid.Row="0" Grid.Column="0"
+                    IsEnabled="False"
+                    Content="Send Cmd"
+                    Opacity="0.35"
+                    Margin="0,0,12,12"/>
+
+            <StackPanel Grid.Row="0" Grid.Column="1">
+                <!-- Placeholder when neither action makes sense -->
+                <Button Content="Connect All"
+                        IsVisible="{Binding DisabledConnectAll}"
+                        IsEnabled="False"/>
+
+                <Button Content="Connect All"
+                        Command="{Binding ConnectAllFlowersCommand}"
+                        IsVisible="{Binding CanConnectAll}"/>
+
+                <Button Content="Disconnect All"
+                        FontSize="14"
+                        Command="{Binding DisconnectAllFlowersCommand}"
+                        IsVisible="{Binding CanDisconnectAll}"/>
+            </StackPanel>
+
+
+          <StackPanel Grid.Row="0" Grid.Column="2">
+          <Button Content="Connect"
+                    IsVisible="{Binding DisabledConnect}"
+                    IsEnabled="False"/>
+            <Button Content="Connect"
+                    Command="{Binding ConnectFlowerCommand}"
+                    IsVisible="{Binding CanConnect}" />
+            <Button Content="Disconnect"
+                    Command="{Binding DisconnectFlowerCommand}"
+                    IsVisible="{Binding CanDisconnect}" />
+            <Button Content="Reconnect"
+                    Command="{Binding ReconnectFlowerCommand}"
+                    IsVisible="{Binding CanReconnect}" />
+          </StackPanel>
+
+
+            <!-- Row 1 -->
+            <Button Grid.Row="1" Grid.Column="0"
+                    Content="Add"
+                    Command="{Binding AddFlowerCommand}"
+                    Margin="0,0,12,0"/>
+
+            <Button Grid.Row="1" Grid.Column="1"
+                    Content="Update"
+                    Command="{Binding UpdateFlowerCommand}"
+                    Margin="0,0,12,0"/>
+
+            <Button Grid.Row="1" Grid.Column="2"
+                    Content="Delete"
+                    Command="{Binding DeleteSelectedFlowerCommand}"
+                    Margin="0,0,0,0"/>
+
+          </Grid>
+        </Grid>
+        <!-- List -->
+        <ListBox Grid.Row="1"
+                 ItemsSource="{Binding Flowers}"
+                 SelectedItem="{Binding SelectedFlower, Mode=TwoWay}">
+          <ListBox.ItemTemplate>
+            <DataTemplate x:DataType="models:FlowerUnit">
+              <!-- 6 columns now: "Id:", Id, Category, FlowerStatus, ConnDot, Brightness -->
+              <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto,Auto" Margin="0,6">
+                <TextBlock Text="Id:" Margin="0,0,8,0"/>
+
+                <TextBlock Grid.Column="1"
+                           Text="{Binding Id}"
+                           Width="52"
+                           TextAlignment="Center"/>
+
+                <TextBlock Grid.Column="2"
+                           Text="{Binding Category}"/>
+
+                <!-- NEW: FlowerStatus text -->
+                <TextBlock Grid.Column="3"
+                           Text="{Binding FlowerStatus}"
+                           HorizontalAlignment="Right"
+                           Margin="16,0,0,0"/>
+
+                <!-- Connection status as a colored dot -->
+                <Ellipse Grid.Column="4"
+                         Width="12" Height="12"
+                         HorizontalAlignment="Right"
+                         Margin="16,0,0,0">
+                  <Ellipse.Fill>
+                    <SolidColorBrush Color="{Binding ConnectionStatus, Converter={StaticResource StatusBrush}, ConverterParameter={x:Null}}"/>
+                  </Ellipse.Fill>
+                  <ac:ToolTip.Tip>
+                    <TextBlock Text="{Binding ConnectionStatus}"/>
+                  </ac:ToolTip.Tip>
+                </Ellipse>
+
+                <TextBlock Grid.Column="5"
+                           Text="{Binding CurrentBrightness}"
+                           HorizontalAlignment="Right"
+                           Width="52"
+                           TextAlignment="Center"/>
+              </Grid>
+            </DataTemplate>
+          </ListBox.ItemTemplate>
+        </ListBox>
+      </Grid>
+    </Border>
+
+    <!-- ===== Row 2: Status (bottom-left) ===== -->
+    <TextBlock Grid.Row="2" Grid.Column="0"
+               Text="{Binding StatusText}"
+               FontSize="16"
+               HorizontalAlignment="Left"
+               VerticalAlignment="Center"
+               Margin="0,8,0,0"
+               Opacity="0.75" />
+  </Grid>
+</UserControl>

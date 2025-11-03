@@ -1,0 +1,98 @@
+<!-- Flower.App/Views/AddFlowerView.axaml -->
+<UserControl
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ac="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls"
+    xmlns:vm="clr-namespace:Flower.App.ViewModels"
+    x:Class="Flower.App.Views.AddFlowerView"
+    x:DataType="vm:IAddOrUpdateFlowerViewModel">
+
+  <!-- Tablet-friendly styles (aligned with MainView) -->
+  <UserControl.Styles>
+    <!-- Buttons (kept in case you add inline OK/Cancel later) -->
+    <Style Selector="Button">
+      <Setter Property="FontSize" Value="18"/>
+      <Setter Property="MinHeight" Value="48"/>
+      <Setter Property="MinWidth" Value="140"/>
+      <Setter Property="Padding" Value="16,10"/>
+      <Setter Property="CornerRadius" Value="8"/>
+      <Setter Property="HorizontalContentAlignment" Value="Center"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+
+    <!-- ComboBox -->
+    <Style Selector="ComboBox">
+      <Setter Property="FontSize" Value="18"/>
+      <Setter Property="MinHeight" Value="48"/>
+      <Setter Property="Padding" Value="12,8"/>
+      <Setter Property="MinWidth" Value="220"/>
+      <Setter Property="HorizontalContentAlignment" Value="Left"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+
+    <!-- Header text -->
+    <Style Selector="TextBlock.header">
+      <Setter Property="FontSize" Value="18"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="Margin" Value="0,0,0,6"/>
+    </Style>
+
+    <!-- Larger TextBox for touch -->
+    <Style Selector="TextBox">
+      <Setter Property="FontSize" Value="18"/>
+      <Setter Property="MinHeight" Value="48"/>
+      <Setter Property="Padding" Value="12,8"/>
+    </Style>
+
+    <!-- Form row helper -->
+    <Style Selector="StackPanel.form-row">
+      <Setter Property="Orientation" Value="Vertical"/>
+      <Setter Property="Spacing" Value="6"/>
+      <Setter Property="Margin" Value="0,0,0,16"/>
+    </Style>
+
+    <Style Selector="ac|NumericUpDown">
+        <Setter Property="FontSize" Value="18"/>
+        <Setter Property="MinHeight" Value="48"/>
+        <Setter Property="Padding" Value="12,8"/>
+        <Setter Property="MinWidth" Value="220"/>
+    </Style>
+  </UserControl.Styles>
+
+  <!-- Simple form: Id + Category + validation summary -->
+  <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*"
+        Margin="16">
+
+    <!-- Id -->
+    <StackPanel Classes="form-row" Grid.Row="0">
+      <TextBlock Classes="header" Text="Flower Id"/>
+
+      <!-- Integer spinner: 1..999 -->
+    <ac:NumericUpDown
+        Value="{Binding IdValue, Mode=TwoWay}"
+        Minimum="1"
+        Maximum="999"
+        Increment="1"
+        FormatString="0" />
+
+
+      <TextBlock Foreground="Tomato"
+                 Text="{Binding IdError}"
+                 IsVisible="{Binding HasIdError}"/>
+    </StackPanel>
+
+
+    <!-- Category -->
+    <StackPanel Classes="form-row" Grid.Row="1">
+      <TextBlock Classes="header" Text="Category"/>
+      <ComboBox ItemsSource="{Binding CategoryItems}"
+                SelectedItem="{Binding SelectedCategory, Mode=TwoWay}"/>
+    </StackPanel>
+
+    <!-- Validation summary (optional) -->
+    <TextBlock Grid.Row="2"
+               Foreground="Tomato"
+               Text="{Binding FormError}"
+               IsVisible="{Binding HasFormError}"/>
+  </Grid>
+</UserControl>

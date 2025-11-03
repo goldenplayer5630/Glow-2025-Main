@@ -3,10 +3,15 @@ using Avalonia.ReactiveUI;
 using Flower.App.ViewModels;
 using Flower.App.Views;
 using Flower.App.Windows;
-using Flower.Core.Abstractions;
+using Flower.Core.Abstractions.Commands;
+using Flower.Core.Abstractions.Services;
+using Flower.Core.Abstractions.Stores;
 using Flower.Core.Cmds;
 using Flower.Core.Cmds.BuiltIn;
-using Flower.Core.Models.Services;
+using Flower.Core.Services;
+using Flower.Infrastructure.Io;
+using Flower.Infrastructure.Persistence;
+using Flower.Infrastructure.Protocol;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using System;
@@ -23,29 +28,62 @@ public static class Program
         var host = Host.CreateDefaultBuilder(args)
             .ConfigureServices(s =>
             {
-                // Engine / Core
-                s.AddSingleton<ISerialPort, SerialPortService>();
-                s.AddSingleton<ShowScheduler>();
-                s.AddSingleton<ShowPlayer>();
+                // ============ Transport / Protocol ============
+                // Raw serial transport (RJCP SerialPortStream)
+                s.AddSingleton<ITransport, SerialPortTransport>();
+
+                // Frame codec (use your real binary codec if you have one)
+                s.AddSingleton<IFrameCodec, JsonLineCodec>();
+
+                // Protocol client: correlates Command -> ACK/NACK
+                s.AddSingleton<IProtocolClient, ProtocolClient>();
+
+                // ============ State & Domain ============
+                // Flower store + service (authoritative collection)
+                s.AddSingleton<IFlowerStore, FlowerStore>();
+                s.AddSingleton<IFlowerService, FlowerService>();
+
+                // Single-writer state mutator (used by dispatcher on ACK/timeout)
+                s.AddSingleton<IFlowerStateService, FlowerStateService>();
+
+                // Commands (domain-level, human-readable Ids)
                 s.AddSingleton<IFlowerCommand, LedSetCmd>();
                 s.AddSingleton<IFlowerCommand, LedRampCmd>();
                 s.AddSingleton<IFlowerCommand, MotorOpenCmd>();
                 s.AddSingleton<IFlowerCommand, MotorCloseCmd>();
                 s.AddSingleton<IFlowerCommand, MotorOpenLedRampCmd>();
                 s.AddSingleton<IFlowerCommand, MotorCloseLedRamp>();
+                // (optional) s.AddSingleton<IFlowerCommand, InitCmd>();
+
+                // Registry maps string ids <-> command instances (+ optional wire codes)
                 s.AddSingleton<ICommandRegistry, CommandRegistry>();
 
-                // VMs
+                // ============ Show engine ============
+                // Dispatcher (per-flower queues, send->wait ACK->update state)
+                s.AddSingleton<ICmdDispatcher, CmdDispatcher>();
+
+                // Scheduler drives timing; ShowPlayer builds dispatchable events
+                s.AddSingleton<IShowSchedulerService, ShowSchedulerService>();
+                s.AddSingleton<IShowPlayerService, ShowPlayerService>();
+                s.AddSingleton<ICommandService, CommandService>();
+
+                // Project store
+                s.AddSingleton<IShowProjectStore, ShowProjectStore>();
+
+                // ============ ViewModels ============
                 s.AddSingleton<IAppViewModel, AppViewModel>();
                 s.AddTransient<IShowCreatorViewModel, ShowCreatorViewModel>();
+                s.AddTransient<IAddOrUpdateFlowerViewModel, AddOrUpdateFlowerViewModel>();
 
-                // Funcs
-                s.AddTransient<Func<ShowCreatorWindow>>(sp => () => sp.GetRequiredService<ShowCreatorWindow>());
-
-                // Views / Windows
+                // ============ Views / Windows ============
                 s.AddTransient<ShowCreatorWindow>();
+                s.AddTransient<AddFlowerWindow>();
                 s.AddTransient<MainWindow>();
 
+                // ============ Factories ============
+                s.AddTransient<Func<ShowCreatorWindow>>(sp => () => sp.GetRequiredService<ShowCreatorWindow>());
+                s.AddTransient<Func<AddOrUpdateFlowerViewModel>>(sp => () => sp.GetRequiredService<AddOrUpdateFlowerViewModel>());
+                s.AddTransient<Func<AddFlowerWindow>>(sp => () => sp.GetRequiredService<AddFlowerWindow>());
             })
             .Build();
 
