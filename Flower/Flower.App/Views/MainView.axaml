@@ -87,26 +87,13 @@
     <!-- ===== Row 0: Ports / Busses (full width) ===== -->
     <Border Grid.Row="0" Grid.ColumnSpan="3" Padding="12" Classes="card">
       <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,*,Auto" RowDefinitions="Auto">
-        <TextBlock Grid.Column="0" Text="Bus 0:" VerticalAlignment="Center" FontSize="18"/>
-        <ComboBox  Grid.Column="1" Margin="8,0"
-                   MinWidth="140" Width="180"
-                   Height="55"
-                   ItemsSource="{Binding Ports}"
-                   SelectedItem="{Binding SelectedPortBus0}"/>
-
-        <TextBlock Grid.Column="2" Text="Bus 1:" VerticalAlignment="Center" FontSize="18" Margin="16,0,0,0"/>
-        <ComboBox  Grid.Column="3" Margin="8,0"
-                   MinWidth="140" Width="180"
-                   Height="55"
-                   ItemsSource="{Binding Ports}"
-                   SelectedItem="{Binding SelectedPortBus1}"/>
-
-        <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="12" HorizontalAlignment="Left">
-          <Button Content="Refresh" Command="{Binding RefreshPortsCommand}"/>
-        </StackPanel>
-
+        <TextBlock Grid.Column="0"
+                Text="Serial Ports:"
+                FontSize="18"
+                VerticalAlignment="Center"
+                Margin="0,0,8,0"/>
         <Button Grid.Column="5"
-                Content="Connect Buses"
+                Content="Manage Buses"
                 Command="{Binding ConnectBusesCommand}"/>
       </Grid>
     </Border>

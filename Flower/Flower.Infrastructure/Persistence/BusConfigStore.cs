@@ -4,7 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Flower.Core.Records
+namespace Flower.Infrastructure.Persistence
 {
-    public sealed record class BusConfig(string BusId, string Port, int Baud);
+    internal class BusConfigStore
+    {
+    }
 }
