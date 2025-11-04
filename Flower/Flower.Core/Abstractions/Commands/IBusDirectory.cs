@@ -1,4 +1,5 @@
-﻿using Flower.Core.Records;
+﻿using Flower.Core.Models;
+using Flower.Core.Records;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,5 +12,8 @@ namespace Flower.Core.Abstractions.Commands
     {
         Task OpenAsync(IEnumerable<BusConfig> configs);
         IProtocolClient GetProtocol(string busId);
+        Task ConnectAsync(BusConfig config);
+        Task DisconnectAsync(string busId);
+        bool IsOpen(string busId);
     }
 }

@@ -11,7 +11,7 @@ public partial class ManageBusesWindow : Window
 {
     public ManageBusesWindow() => InitializeComponent();
 
-    public ManageBusesWindow(IAddOrUpdateFlowerViewModel vm) : this()
+    public ManageBusesWindow(IManageBusesViewModel vm) : this()
     {
         DataContext = vm;
         // Wire the named buttons (x:Name="AddButton" / "CancelButton")
@@ -37,7 +37,7 @@ public partial class ManageBusesWindow : Window
 
     private void OnCancelClicked(object? sender, RoutedEventArgs e)
     {
-        if (DataContext is IAddOrUpdateFlowerViewModel vm)
+        if (DataContext is IManageBusesViewModel vm)
             vm.Cancel(); // keeps VM semantics
 
         Close(null);

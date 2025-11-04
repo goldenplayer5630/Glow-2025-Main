@@ -53,8 +53,6 @@ namespace Flower.App.ViewModels
         bool DisabledConnectAll { get; }
 
         // ========= Commands =========
-        ReactiveCommand<Unit, Unit> RefreshPortsCommand { get; }
-        ReactiveCommand<Unit, Unit> ConnectBusesCommand { get; }
         ReactiveCommand<Unit, Unit> LoadShowCommand { get; }
         ReactiveCommand<Unit, Unit> PlayCommand { get; }
         ReactiveCommand<Unit, Unit> StopCommand { get; }

@@ -1,8 +1,143 @@
-<UserControl xmlns="https://github.com/avaloniaui"
-             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
-             x:Class="Flower.App.ManageBusesView">
-  Welcome to Avalonia!
+<UserControl
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:vm="clr-namespace:Flower.App.ViewModels"
+    x:Class="Flower.App.Views.ManageBusesView"
+    x:DataType="vm:IManageBusesViewModel">
+
+  <!-- Touch-friendly styles -->
+
+  <UserControl.Styles>
+    <Style Selector="Button">
+      <Setter Property="FontSize" Value="18"/>
+      <Setter Property="MinHeight" Value="56"/>
+      <Setter Property="MinWidth" Value="140"/>
+      <Setter Property="Padding" Value="16,10"/>
+      <Setter Property="CornerRadius" Value="8"/>
+      <Setter Property="HorizontalContentAlignment" Value="Center"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+
+    <!-- ComboBox -->
+    <Style Selector="ComboBox">
+      <Setter Property="FontSize" Value="18"/>
+      <Setter Property="MinHeight" Value="48"/>
+      <Setter Property="Padding" Value="12,8"/>
+      <Setter Property="MinWidth" Value="220"/>
+      <Setter Property="HorizontalContentAlignment" Value="Left"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+
+    <Style Selector="ListBoxItem">
+      <Setter Property="MinHeight" Value="48"/>
+      <Setter Property="Padding" Value="10,8"/>
+      <Setter Property="FontSize" Value="16"/>
+    </Style>
+    <Style Selector="TextBlock.header">
+      <Setter Property="FontSize" Value="18"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+  </UserControl.Styles>
+
+<Grid ColumnDefinitions="2*,3*" RowDefinitions="Auto,*,Auto" Margin="16">
+
+  <!-- Header (spans both columns) -->
+  <Grid Grid.Row="0" Grid.ColumnSpan="2"
+        ColumnDefinitions="Auto,Auto,*,Auto,Auto"
+        Margin="0,0,0,8">
+    <Button Grid.Column="0" Content="Refresh Ports" Command="{Binding RefreshPortsCommand}"/>
+    <Button Grid.Column="1" Content="Save" Command="{Binding SaveCommand}" Margin="8,0,0,0"/>
+    <TextBlock Grid.Column="2" Text="{Binding Status}" VerticalAlignment="Center" Opacity="0.7" Margin="16,0,0,0"/>
+    <Button Grid.Column="3" Content="Connect All" Command="{Binding ConnectAllCommand}" Margin="16,0,0,0"/>
+    <Button Grid.Column="4" Content="Disconnect All" Command="{Binding DisconnectAllCommand}" Margin="8,0,0,0"/>
+  </Grid>
+
+  <!-- Left column: List -->
+  <Border Grid.Row="1" Grid.Column="0" Padding="12" Classes="card">
+    <ListBox ItemsSource="{Binding Buses}" SelectedItem="{Binding Selected}">
+      <ListBox.ItemTemplate>
+        <DataTemplate>
+          <Grid ColumnDefinitions="*,*,Auto,Auto" Margin="0,6">
+            <TextBlock Grid.Column="0" Text="{Binding BusId}" FontWeight="SemiBold"/>
+            <TextBlock Grid.Column="1" Text="{Binding Port}" Margin="12,0,0,0"/>
+            <TextBlock Grid.Column="2" Text="{Binding Baud}" Margin="12,0,0,0" HorizontalAlignment="Right"/>
+            <Border Grid.Column="3" Margin="12,0,0,0" Padding="10,4" CornerRadius="999" Background="#EEE">
+              <TextBlock Text="{Binding ConnectionStatus}"/>
+            </Border>
+          </Grid>
+        </DataTemplate>
+      </ListBox.ItemTemplate>
+    </ListBox>
+  </Border>
+
+  <!-- Right column: a 2-row grid (Editor on top, Actions below) -->
+  <Grid Grid.Row="1" Grid.Column="1" RowDefinitions="*,Auto">
+
+    <!-- Editor (top row) -->
+    <Border Grid.Row="0" Padding="12" Classes="card">
+      <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="160,*">
+
+        <!-- Bus Id -->
+        <TextBlock Grid.Row="0" Grid.Column="0" Text="Bus Id:" VerticalAlignment="Center" Classes="header"/>
+        <ComboBox  Grid.Row="0" Grid.Column="1"
+                   ItemsSource="{Binding BusIdOptions}"
+                   SelectedItem="{Binding EditBusId}"
+                   IsEnabled="{Binding Selected, Converter={x:Static ObjectConverters.IsNull}}"
+                   MinWidth="260"/>
+
+        <!-- Port -->
+        <TextBlock Grid.Row="1" Grid.Column="0" Text="Port:" VerticalAlignment="Center" Classes="header"/>
+        <ComboBox  Grid.Row="1" Grid.Column="1"
+                   ItemsSource="{Binding Ports}"
+                   SelectedItem="{Binding EditPort}"
+                   MinWidth="260"/>
+
+        <!-- Baud -->
+        <TextBlock Grid.Row="2" Grid.Column="0" Text="Baud:" VerticalAlignment="Center" Classes="header"/>
+        <NumericUpDown Grid.Row="2" Grid.Column="1"
+                       Value="{Binding EditBaud}"
+                       Minimum="1200" Maximum="1000000" Increment="1200"
+                       Width="260" HorizontalAlignment="Left"/>
+      </Grid>
+    </Border>
+
+    <!-- Actions (bottom row) -->
+    <Border Grid.Row="1" Padding="12" Classes="card">
+      <!-- 3 columns with 12px gutters; 2 rows with a 12px gutter -->
+      <Grid RowDefinitions="Auto,12,Auto"
+            ColumnDefinitions="Auto,12,Auto,12,Auto">
+
+        <!-- Row 1 -->
+        <Button Grid.Row="0" Grid.Column="0"
+                Content="Add"
+                Command="{Binding AddCommand}"/>
+
+        <Button Grid.Row="0" Grid.Column="2"
+                Content="Update"
+                Command="{Binding UpdateCommand}"/>
+
+        <Button Grid.Row="0" Grid.Column="4"
+                Content="Delete"
+                Command="{Binding DeleteCommand}"/>
+
+        <!-- Row 2 -->
+        <Button Grid.Row="2" Grid.Column="0"
+                Content="Connect"
+                Command="{Binding ConnectCommand}"/>
+
+        <Button Grid.Row="2" Grid.Column="2"
+                Content="Disconnect"
+                Command="{Binding DisconnectCommand}"/>
+      </Grid>
+    </Border>
+
+
+
+  </Grid>
+
+  <!-- Footer (optional status, spans both columns) -->
+  <TextBlock Grid.Row="2" Grid.ColumnSpan="2"
+             Text="{Binding Status}" Opacity="0.7" Margin="0,8,0,0"/>
+</Grid>
+
 </UserControl>

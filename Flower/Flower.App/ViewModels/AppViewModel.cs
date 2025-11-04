@@ -132,8 +132,6 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
     public bool DisabledConnectAll => !HasFlowers || (!CanConnectAll && !CanDisconnectAll);
 
     // ========= Commands =========
-    public ReactiveCommand<Unit, Unit> RefreshPortsCommand { get; }
-    public ReactiveCommand<Unit, Unit> ConnectBusesCommand { get; }    // ⬅️ replaces ConnectCommand
     public ReactiveCommand<Unit, Unit> LoadShowCommand { get; }
     public ReactiveCommand<Unit, Unit> PlayCommand { get; }
     public ReactiveCommand<Unit, Unit> StopCommand { get; }
@@ -152,6 +150,8 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
     // ========= Dialog Interactions =========
     public ReactiveCommand<Unit, Unit> OpenShowCreatorCommand { get; }
     public Interaction<Unit, Unit> OpenShowCreatorInteraction { get; } = new();
+    public ReactiveCommand<Unit, Unit> OpenManageBusesCommand { get; }
+    public Interaction<Unit, Unit> OpenManageBusesInteraction { get; } = new();
 
     public Interaction<Unit, FlowerUnit?> AddFlowerInteraction { get; } = new();
     public Interaction<FlowerUnit, FlowerUnit?> UpdateFlowerInteraction { get; } = new();
@@ -182,9 +182,6 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
         _hasFlowers = hasFlowersObs.ToProperty(this, vm => vm.HasFlowers, scheduler: RxApp.MainThreadScheduler);
 
         // Commands
-        RefreshPortsCommand = ReactiveCommand.Create(RefreshPorts);
-        ConnectBusesCommand = ReactiveCommand.CreateFromTask(ConnectBusesAsync);
-
         ConnectFlowerCommand = ReactiveCommand.CreateFromTask(ConnectFlowerAsync, this.WhenAnyValue(vm => vm.SelectedFlower).Select(sf => sf != null));
         DisconnectFlowerCommand = ReactiveCommand.CreateFromTask(DisconnectFlowerAsync, this.WhenAnyValue(vm => vm.SelectedFlower).Select(sf => sf != null));
         ReconnectFlowerCommand = ReactiveCommand.CreateFromTask(ReconnectFlowerAsync, this.WhenAnyValue(vm => vm.SelectedFlower).Select(sf => sf != null));
@@ -199,6 +196,11 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
         OpenShowCreatorCommand = ReactiveCommand.CreateFromTask(async () =>
         {
             await OpenShowCreatorInteraction.Handle(Unit.Default);
+        });
+
+        OpenManageBusesCommand = ReactiveCommand.CreateFromTask(async () =>
+        {
+            await OpenManageBusesInteraction.Handle(Unit.Default);
         });
 
         AddFlowerCommand = ReactiveCommand.CreateFromTask(AddFlowerAsync);

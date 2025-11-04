@@ -94,7 +94,7 @@
                 Margin="0,0,8,0"/>
         <Button Grid.Column="5"
                 Content="Manage Buses"
-                Command="{Binding ConnectBusesCommand}"/>
+                Command="{Binding OpenManageBusesCommand}"/>
       </Grid>
     </Border>
 

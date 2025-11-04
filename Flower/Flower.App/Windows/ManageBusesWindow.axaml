@@ -3,9 +3,10 @@
         xmlns:app="using:Flower.App"
         xmlns:views="clr-namespace:Flower.App.Views"
         x:Class="Flower.App.Windows.ManageBusesWindow"
-        Title="Add Flower"
-        Width="560" Height="360"
-        MinWidth="560" MinHeight="360"
+        Title="Manage Buses"
+        Width="960" Height="600"
+        MinWidth="960" MinHeight="600"
+        MaxWidth="960" MaxHeight="600"
         CanResize="False"
         WindowStartupLocation="CenterOwner">
 
@@ -24,7 +25,7 @@
 
   <Grid RowDefinitions="*,Auto" Margin="16">
     <!-- The form (already updated to use NumericUpDown/TextBox without InputScope) -->
-    <app:ManageBusesView/>
+    <views:ManageBusesView/>
 
     <!-- Bottom action row -->
     <StackPanel Grid.Row="1"

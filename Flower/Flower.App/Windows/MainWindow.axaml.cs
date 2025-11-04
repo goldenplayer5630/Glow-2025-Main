@@ -11,6 +11,7 @@ namespace Flower.App.Windows
     {
         private readonly Func<ShowCreatorWindow> _showCreatorWindowFactory;
         private readonly Func<AddFlowerWindow> _addOrUpdateFlowerWindowFactory;
+        private readonly Func<ManageBusesWindow> _manageBusesWindowFactory;
 
         public MainWindow()
         {
@@ -23,12 +24,14 @@ namespace Flower.App.Windows
         public MainWindow(
             IAppViewModel vm,
             Func<ShowCreatorWindow> showCreatorWindowFactory,
-            Func<AddFlowerWindow> addFlowerWindowFactory
+            Func<AddFlowerWindow> addFlowerWindowFactory,
+            Func<ManageBusesWindow> manageBusesWindowFactory
         ) : this()
         {
             DataContext = vm;
             _showCreatorWindowFactory = showCreatorWindowFactory;
             _addOrUpdateFlowerWindowFactory = addFlowerWindowFactory;
+            _manageBusesWindowFactory = manageBusesWindowFactory;
 
             HookInteractions(vm);
 
@@ -94,7 +97,12 @@ namespace Flower.App.Windows
                 ctx.SetOutput(result);
             });
 
-
+            vm.OpenManageBusesInteraction.RegisterHandler(async ctx =>
+            {
+                var win = _manageBusesWindowFactory(); // ← has DataContext from DI
+                await win.ShowDialog(this);
+                ctx.SetOutput(Unit.Default);
+            });
         }
     }
 }

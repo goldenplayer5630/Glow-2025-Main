@@ -1,5 +1,6 @@
 ﻿using Avalonia;
 using Avalonia.ReactiveUI;
+using Bus.Core.Services;
 using Flower.App.ViewModels;
 using Flower.App.Views;
 using Flower.App.Windows;
@@ -44,6 +45,10 @@ public static class Program
                 // Single-writer state mutator (used by dispatcher on ACK/timeout)
                 s.AddSingleton<IFlowerStateService, FlowerStateService>();
 
+                // Bus Service+ store
+                s.AddSingleton<IBusConfigStore, BusConfigStore>();
+                s.AddSingleton<IBusConfigService, BusConfigService>();
+
                 // Commands (domain-level, human-readable Ids)
                 s.AddSingleton<IFlowerCommand, LedSetCmd>();
                 s.AddSingleton<IFlowerCommand, LedRampCmd>();
@@ -51,6 +56,7 @@ public static class Program
                 s.AddSingleton<IFlowerCommand, MotorCloseCmd>();
                 s.AddSingleton<IFlowerCommand, MotorOpenLedRampCmd>();
                 s.AddSingleton<IFlowerCommand, MotorCloseLedRamp>();
+                s.AddSingleton<IFlowerCommand, PingCmd>();
                 // (optional) s.AddSingleton<IFlowerCommand, InitCmd>();
 
                 // Registry maps string ids <-> command instances (+ optional wire codes)
@@ -72,16 +78,18 @@ public static class Program
                 s.AddSingleton<IAppViewModel, AppViewModel>();
                 s.AddTransient<IShowCreatorViewModel, ShowCreatorViewModel>();
                 s.AddTransient<IAddOrUpdateFlowerViewModel, AddOrUpdateFlowerViewModel>();
+                s.AddTransient<IManageBusesViewModel, ManageBusesViewModel>();
 
                 // ============ Views / Windows ============
                 s.AddTransient<ShowCreatorWindow>();
                 s.AddTransient<AddFlowerWindow>();
+                s.AddTransient<ManageBusesWindow>();
                 s.AddTransient<MainWindow>();
 
                 // ============ Factories ============
                 s.AddTransient<Func<ShowCreatorWindow>>(sp => () => sp.GetRequiredService<ShowCreatorWindow>());
-                s.AddTransient<Func<AddOrUpdateFlowerViewModel>>(sp => () => sp.GetRequiredService<AddOrUpdateFlowerViewModel>());
                 s.AddTransient<Func<AddFlowerWindow>>(sp => () => sp.GetRequiredService<AddFlowerWindow>());
+                s.AddTransient<Func<ManageBusesWindow>>(sp => () => sp.GetRequiredService<ManageBusesWindow>());
             })
             .Build();
 
