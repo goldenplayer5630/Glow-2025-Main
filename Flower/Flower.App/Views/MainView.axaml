@@ -82,23 +82,35 @@
 
 
   <!-- Layout: top serial, middle 3-cols (show | monitor | flowers), bottom status -->
-  <Grid RowDefinitions="Auto,*,Auto" ColumnDefinitions="1.2*,1.8*,2*" Margin="16">
+  <Grid RowDefinitions="Auto,*,Auto" ColumnDefinitions="1.0*,1.0*,2.0*" Margin="16">
 
-    <!-- ===== Row 0: Port / Serial (full width) ===== -->
+    <!-- ===== Row 0: Ports / Busses (full width) ===== -->
     <Border Grid.Row="0" Grid.ColumnSpan="3" Padding="12" Classes="card">
-      <Grid ColumnDefinitions="Auto,Auto,*,Auto" RowDefinitions="Auto">
-        <TextBlock Grid.Column="0" Text="Port:" VerticalAlignment="Center" FontSize="18"/>
+      <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,*,Auto" RowDefinitions="Auto">
+        <TextBlock Grid.Column="0" Text="Bus 0:" VerticalAlignment="Center" FontSize="18"/>
         <ComboBox  Grid.Column="1" Margin="8,0"
                    MinWidth="140" Width="180"
                    Height="55"
                    ItemsSource="{Binding Ports}"
-                   SelectedItem="{Binding SelectedPort}"/>
-        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="12">
+                   SelectedItem="{Binding SelectedPortBus0}"/>
+
+        <TextBlock Grid.Column="2" Text="Bus 1:" VerticalAlignment="Center" FontSize="18" Margin="16,0,0,0"/>
+        <ComboBox  Grid.Column="3" Margin="8,0"
+                   MinWidth="140" Width="180"
+                   Height="55"
+                   ItemsSource="{Binding Ports}"
+                   SelectedItem="{Binding SelectedPortBus1}"/>
+
+        <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="12" HorizontalAlignment="Left">
           <Button Content="Refresh" Command="{Binding RefreshPortsCommand}"/>
-          <Button Content="Connect" Command="{Binding ConnectCommand}"/>
         </StackPanel>
+
+        <Button Grid.Column="5"
+                Content="Connect Buses"
+                Command="{Binding ConnectBusesCommand}"/>
       </Grid>
     </Border>
+
 
     <!-- ===== Row 1: Show (left) + Monitor (right) close together ===== -->
     <Grid Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
@@ -133,17 +145,23 @@
         <Grid RowDefinitions="Auto,*,Auto">
           <!-- Header + actions in 3x2 grid -->
           <Grid Margin="0,0,0,12"
-                ColumnDefinitions="*,*,*"
+                ColumnDefinitions="*,*,*,*"
                 RowDefinitions="Auto,Auto">
 
             <!-- Row 0 -->
             <Button Grid.Row="0" Grid.Column="0"
                     IsEnabled="False"
+                    Content=""
+                    Opacity="0.35"
+                    Margin="0,0,12,12"/>
+
+            <Button Grid.Row="0" Grid.Column="1"
+                    IsEnabled="False"
                     Content="Send Cmd"
                     Opacity="0.35"
                     Margin="0,0,12,12"/>
 
-            <StackPanel Grid.Row="0" Grid.Column="1">
+            <StackPanel Grid.Row="0" Grid.Column="2">
                 <!-- Placeholder when neither action makes sense -->
                 <Button Content="Connect All"
                         IsVisible="{Binding DisabledConnectAll}"
@@ -160,7 +178,7 @@
             </StackPanel>
 
 
-          <StackPanel Grid.Row="0" Grid.Column="2">
+          <StackPanel Grid.Row="0" Grid.Column="3">
           <Button Content="Connect"
                     IsVisible="{Binding DisabledConnect}"
                     IsEnabled="False"/>
@@ -178,16 +196,21 @@
 
             <!-- Row 1 -->
             <Button Grid.Row="1" Grid.Column="0"
+                    IsEnabled="False"
+                    Content=""
+                    Opacity="0.35"
+                    Margin="0,0,12,0"/>
+            <Button Grid.Row="1" Grid.Column="1"
                     Content="Add"
                     Command="{Binding AddFlowerCommand}"
                     Margin="0,0,12,0"/>
 
-            <Button Grid.Row="1" Grid.Column="1"
+            <Button Grid.Row="1" Grid.Column="2"
                     Content="Update"
                     Command="{Binding UpdateFlowerCommand}"
                     Margin="0,0,12,0"/>
 
-            <Button Grid.Row="1" Grid.Column="2"
+            <Button Grid.Row="1" Grid.Column="3"
                     Content="Delete"
                     Command="{Binding DeleteSelectedFlowerCommand}"
                     Margin="0,0,0,0"/>
@@ -212,7 +235,6 @@
                 <TextBlock Grid.Column="2"
                            Text="{Binding Category}"/>
 
-                <!-- NEW: FlowerStatus text -->
                 <TextBlock Grid.Column="3"
                            Text="{Binding FlowerStatus}"
                            HorizontalAlignment="Right"

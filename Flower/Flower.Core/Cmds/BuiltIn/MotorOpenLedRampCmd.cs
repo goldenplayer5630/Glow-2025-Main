@@ -16,8 +16,7 @@ namespace Flower.Core.Cmds.BuiltIn
         private static readonly IReadOnlyDictionary<string, object?> _args =
             new Dictionary<string, object?>
             {
-                ["startIntensity"] = 0,     // 0..255
-                ["endIntensity"] = 120,   // 0..255
+                ["endIntensity"] = 120,   // 0..120
                 ["durationMs"] = 1500   // >0
             };
 
@@ -29,15 +28,10 @@ namespace Flower.Core.Cmds.BuiltIn
 
         public void ValidateArgs(FlowerCategory category, IReadOnlyDictionary<string, object?> args)
         {
-            if (!args.ContainsKey("startIntensity"))
-                throw new ArgumentException("Missing required argument: startIntensity");
-            if (args["startIntensity"] is not int startIntensity || startIntensity < 0 || startIntensity > 255)
-                throw new ArgumentException("Argument 'startIntensity' must be an integer between 0 and 255.");
-
             if (!args.ContainsKey("endIntensity"))
                 throw new ArgumentException("Missing required argument: endIntensity");
-            if (args["endIntensity"] is not int endIntensity || endIntensity < 0 || endIntensity > 255)
-                throw new ArgumentException("Argument 'endIntensity' must be an integer between 0 and 255.");
+            if (args["endIntensity"] is not int endIntensity || endIntensity < 0 || endIntensity > 120)
+                throw new ArgumentException("Argument 'endIntensity' must be an integer between 0 and 120.");
 
             if (!args.ContainsKey("durationMs"))
                 throw new ArgumentException("Missing required argument: durationMs");
@@ -50,10 +44,9 @@ namespace Flower.Core.Cmds.BuiltIn
             FlowerCategory category,
             IReadOnlyDictionary<string, object?> args)
         {
-            int startIntensity = (int)args["startIntensity"]!;
             int endIntensity = (int)args["endIntensity"]!;
             int durationMs = (int)args["durationMs"]!;
-            string frame = $"{flowerId}/OPENLEDRAMP:{startIntensity},{endIntensity},{durationMs}\n";
+            string frame = $"{flowerId}/OPENLEDRAMP:{endIntensity},{durationMs}\n";
             return new[] { Encoding.ASCII.GetBytes(frame) };
         }
 

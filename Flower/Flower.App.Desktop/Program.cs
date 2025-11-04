@@ -28,15 +28,13 @@ public static class Program
         var host = Host.CreateDefaultBuilder(args)
             .ConfigureServices(s =>
             {
-                // ============ Transport / Protocol ============
-                // Raw serial transport (RJCP SerialPortStream)
-                s.AddSingleton<ITransport, SerialPortTransport>();
+                // ============ Transport / Protocol ===========
 
                 // Frame codec (use your real binary codec if you have one)
                 s.AddSingleton<IFrameCodec, JsonLineCodec>();
 
-                // Protocol client: correlates Command -> ACK/NACK
-                s.AddSingleton<IProtocolClient, ProtocolClient>();
+                // Bus directory creates its own SerialPortTransport + ProtocolClient per bus
+                s.AddSingleton<IBusDirectory, BusDirectory>();
 
                 // ============ State & Domain ============
                 // Flower store + service (authoritative collection)

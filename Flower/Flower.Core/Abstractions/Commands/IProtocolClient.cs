@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace Flower.Core.Abstractions.Commands
 {
-    public interface IProtocolClient
+    public interface IProtocolClient : IAsyncDisposable
     {
         Task<ProtocolEnvelope> SendAndWaitAckAsync(
             ProtocolEnvelope command,

@@ -71,33 +71,69 @@ namespace Flower.Core.Services
             foreach (var x in logical)
             {
                 var at = x.Ev.AtMs;
-                var (flowerId, cmdId, args) = x.Ev.Event;
+                var (flowerId, originalCmdId, originalArgs) = x.Ev.Event;
 
                 var flower = flowers.FirstOrDefault(f => f.Id == flowerId)
                           ?? throw new InvalidOperationException($"Flower {flowerId} missing from project.");
+
+                // Start with originals; we may rewrite below
+                var cmdId = originalCmdId;
+                var args = new Dictionary<string, object?>(originalArgs ?? new Dictionary<string, object?>());
+
+                // Resolve command (after potential rewrite below we’ll re-resolve)
                 var cmd = _commands.GetById(cmdId);
 
+                // Validate support
                 if (!cmd.SupportedCategories.Contains(flower.Category))
                     throw new InvalidOperationException($"Command {cmd.Id} not supported for {flower.Category}.");
 
+                // --- Idempotency + smart rewrite ---
+                // If OPEN/CLOSE is a no-op, we’ll skip it via ShouldSkip.
+                // If a combined motor+led.ramp is a no-op for the motor, rewrite to plain led.ramp.
+                Func<FlowerUnit, bool>? shouldSkip = cmd.Id switch
+                {
+                    "motor.open" => f => f.FlowerStatus == FlowerStatus.Open,
+                    "motor.close" => f => f.FlowerStatus == FlowerStatus.Closed,
+                    _ => null
+                };
+
+                bool isNoOpNow = shouldSkip?.Invoke(flower) ?? false;
+
+                // Combined command rewrite → led.ramp (keep endIntensity & durationMs)
+                if (isNoOpNow && (cmd.Id == "motor.open.led.ramp" || cmd.Id == "motor.close.led.ramp"))
+                {
+                    cmdId = "led.ramp";
+                    args = new Dictionary<string, object?>
+                    {
+                        ["endIntensity"] = args["endIntensity"],
+                        ["durationMs"] = args["durationMs"]
+                    };
+                }
+
+                if (cmdId != originalCmdId)
+                    cmd = _commands.GetById(cmdId);
+
+                // Validate args for the (possibly) rewritten command
                 cmd.ValidateArgs(flower.Category, args);
 
-                // Express *expected* state changes for dispatcher to apply on ACK/Timeout
-                var onAck = cmd.StateOnAck(flower.Category, args); // e.g., set Open / brightness, mark Healthy
+                // Expected state changes
+                var onAck = cmd.StateOnAck(flower.Category, args);
                 var onTimeout = static (FlowerUnit f) =>
                 {
                     f.ConnectionStatus = ConnectionStatus.Degraded;
                     return f;
                 };
 
-
+                // For rewritten led.ramp, ShouldSkip usually not needed; for plain open/close we keep it.
                 var req = new CommandRequest(
+                    BusId: flower.BusId,
                     FlowerId: flowerId,
                     CommandId: cmd.Id,
                     Args: args,
                     AckTimeout: TimeSpan.FromMilliseconds(400),
                     StateOnAck: onAck,
-                    StateOnTimeout: onTimeout
+                    StateOnTimeout: onTimeout,
+                    ShouldSkip: shouldSkip // null for non-motor commands
                 );
 
                 list.Add(new DispatchableEvent(at, req));
@@ -105,6 +141,7 @@ namespace Flower.Core.Services
 
             return list;
         }
+
 
         private async Task RunTimelineAsync(
             IReadOnlyList<DispatchableEvent> events,

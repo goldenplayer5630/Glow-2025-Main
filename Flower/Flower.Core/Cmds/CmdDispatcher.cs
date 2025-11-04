@@ -4,6 +4,7 @@ using Flower.Core.Enums;
 using Flower.Core.Models;
 using Flower.Core.Records;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -12,78 +13,109 @@ using System.Threading.Tasks;
 
 namespace Flower.Core.Cmds
 {
-    public class CmdDispatcher : ICmdDispatcher
+    public sealed class CmdDispatcher : ICmdDispatcher, IAsyncDisposable
     {
-        private readonly Channel<CommandRequest> _queue = Channel.CreateUnbounded<CommandRequest>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
-        private readonly IProtocolClient _protocol;
+        private readonly IBusDirectory _buses;
         private readonly IFlowerStateService _state;
+        private readonly IFlowerService _flowers;
 
-        public CmdDispatcher(IProtocolClient protocol, IFlowerStateService state)
+        private readonly ConcurrentDictionary<(string BusId, int FlowerId), Channel<CommandWork>> _queues = new();
+        private readonly ConcurrentDictionary<(string BusId, int FlowerId), Task> _workers = new();
+
+        public CmdDispatcher(IBusDirectory buses, IFlowerStateService state, IFlowerService flowers)
         {
-            _protocol = protocol;
+            _buses = buses;
             _state = state;
-            _ = Task.Run(WorkerLoop);
+            _flowers = flowers;
+        }
+
+        private sealed class CommandWork
+        {
+            public required CommandRequest Req { get; init; }
+            public required TaskCompletionSource<CommandOutcome> Tcs { get; init; }
         }
 
         public Task<CommandOutcome> EnqueueAsync(CommandRequest req, CancellationToken ct = default)
         {
+            var key = (req.BusId, req.FlowerId);
+            var ch = _queues.GetOrAdd(key, _ =>
+                Channel.CreateUnbounded<CommandWork>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false }));
+
             var tcs = new TaskCompletionSource<CommandOutcome>(TaskCreationOptions.RunContinuationsAsynchronously);
-            _queue.Writer.TryWrite(req with
-            {
-                // attach a continuation object if you like; or keep a parallel dictionary
-            });
+            ch.Writer.TryWrite(new CommandWork { Req = req, Tcs = tcs });
+
+            _workers.GetOrAdd(key, _ => Task.Run(() => WorkerLoop(key, ch)));
+
             return tcs.Task;
         }
 
-        private async Task WorkerLoop()
+        private async Task WorkerLoop((string BusId, int FlowerId) key, Channel<CommandWork> ch)
         {
-            await foreach (var req in _queue.Reader.ReadAllAsync())
-            {
-                var corr = Guid.NewGuid();
-                var env = new ProtocolEnvelope(corr, req.FlowerId, req.CommandId, BuildPayload(req.Args), ProtocolMessageType.Command);
+            var protocol = _buses.GetProtocol(key.BusId);
 
-                CommandOutcome outcome;
+            await foreach (var work in ch.Reader.ReadAllAsync())
+            {
+                // ---- HARD GATE: don't run on degraded/disconnected ----
+                var fu = await _flowers.GetAsync(key.FlowerId);
+                if (fu is null || fu.ConnectionStatus is ConnectionStatus.Degraded or ConnectionStatus.Disconnected)
+                {
+                    work.Tcs.TrySetResult(CommandOutcome.SkippedNotConnected);
+                    continue;
+                }
+
+                if (work.Req.ShouldSkip != null && work.Req.ShouldSkip(fu))
+                {
+                    work.Tcs.TrySetResult(CommandOutcome.SkippedNoOp);
+                    continue;
+                }
+                // -------------------------------------------------------
+
+                var r = work.Req;
+                var outcome = CommandOutcome.Timeout;
+
                 try
                 {
-                    var ack = await _protocol.SendAndWaitAckAsync(env, req.AckTimeout);
-                    outcome = ack.Type == ProtocolMessageType.Ack ? CommandOutcome.Acked :
-                              CommandOutcome.Nacked;
+                    var corr = Guid.NewGuid();
+                    var env = new ProtocolEnvelope(
+                        corr, r.FlowerId, r.CommandId,
+                        BuildPayload(r.Args), ProtocolMessageType.Command);
+
+                    var ack = await protocol.SendAndWaitAckAsync(env, r.AckTimeout);
+                    outcome = ack.Type == ProtocolMessageType.Ack ? CommandOutcome.Acked : CommandOutcome.Nacked;
                 }
-                catch (OperationCanceledException)
-                {
-                    outcome = CommandOutcome.Timeout;
-                }
-                catch
-                {
-                    outcome = CommandOutcome.Timeout; // treat errors as timeouts for state policy
-                }
+                catch (OperationCanceledException) { outcome = CommandOutcome.Timeout; }
+                catch { outcome = CommandOutcome.Timeout; }
 
                 // State transitions
                 switch (outcome)
                 {
                     case CommandOutcome.Acked:
-                        if (req.StateOnAck != null) await _state.ApplyAsync(req.FlowerId, req.StateOnAck);
-                        else await _state.TouchConnectionAsync(req.FlowerId, ConnectionStatus.Connected);
-                        break;
-                    case CommandOutcome.Timeout:
-                        if (req.StateOnTimeout != null) await _state.ApplyAsync(req.FlowerId, req.StateOnTimeout);
-                        else await _state.TouchConnectionAsync(req.FlowerId, ConnectionStatus.Degraded);
+                        if (r.StateOnAck != null) await _state.ApplyAsync(r.FlowerId, r.StateOnAck);
+                        else await _state.TouchConnectionAsync(r.FlowerId, ConnectionStatus.Connected);
                         break;
                     case CommandOutcome.Nacked:
-                        // optional: mark degraded or leave as-is
-                        await _state.TouchConnectionAsync(req.FlowerId, ConnectionStatus.Degraded);
+                        await _state.TouchConnectionAsync(r.FlowerId, ConnectionStatus.Degraded);
+                        break;
+                    case CommandOutcome.Timeout:
+                        if (r.StateOnTimeout != null) await _state.ApplyAsync(r.FlowerId, r.StateOnTimeout);
+                        else await _state.TouchConnectionAsync(r.FlowerId, ConnectionStatus.Degraded);
                         break;
                 }
 
-                // complete the task for EnqueueAsync(...) caller (omitted here for brevity)
+                work.Tcs.TrySetResult(outcome);
             }
         }
 
         private static ReadOnlyMemory<byte> BuildPayload(IReadOnlyDictionary<string, object?> args)
         {
-            // map args to your wire format
-            // e.g., span writer, ushort durations, etc.
-            throw new NotImplementedException();
+            // map args to bytes; you already do this in each command or codec
+            return ReadOnlyMemory<byte>.Empty;
+        }
+
+        public async ValueTask DisposeAsync()
+        {
+            foreach (var kv in _queues) kv.Value.Writer.TryComplete();
+            await Task.WhenAll(_workers.Values);
         }
     }
 }

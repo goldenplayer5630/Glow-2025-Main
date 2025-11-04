@@ -9,6 +9,8 @@ namespace Flower.Core.Enums
     public enum CommandOutcome { 
         Acked, 
         Nacked, 
-        Timeout 
+        Timeout,
+        SkippedNotConnected,
+        SkippedNoOp
     }
 }

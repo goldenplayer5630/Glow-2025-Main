@@ -53,6 +53,7 @@ namespace Flower.Core.Services
             };
 
             var cmdRequest = new CommandRequest(
+                BusId: flowerUnit.BusId,
                 CommandId: cmd.Id,
                 FlowerId: flowerUnit.Id,
                 Args: safeArgs,

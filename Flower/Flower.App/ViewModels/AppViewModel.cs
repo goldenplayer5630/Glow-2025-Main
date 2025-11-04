@@ -6,6 +6,7 @@ using Flower.Core.Abstractions.Services;
 using Flower.Core.Abstractions.Stores;
 using Flower.Core.Enums;
 using Flower.Core.Models;
+using Flower.Core.Records;
 using Flower.Core.Services;
 using ReactiveUI;
 using RJCP.IO.Ports;
@@ -25,8 +26,8 @@ namespace Flower.App.ViewModels;
 public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
 {
     // ========= Fields =========
-    private readonly ITransport _serial;
-    private readonly ShowPlayerService _player;
+    private readonly IBusDirectory _busDirectory;        // ⬅️ multi-bus manager
+    private readonly IShowPlayerService _player;
     private readonly IShowProjectStore _showStore;
     private readonly IFlowerService _flowerService;
 
@@ -50,14 +51,22 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
         set => this.RaiseAndSetIfChanged(ref _currentPage, value);
     }
 
-    private string? _selectedPort;
-    public string? SelectedPort
+    // Two bus selectors instead of one
+    private string? _selectedPortBus0;
+    public string? SelectedPortBus0
     {
-        get => _selectedPort;
-        set => this.RaiseAndSetIfChanged(ref _selectedPort, value);
+        get => _selectedPortBus0;
+        set => this.RaiseAndSetIfChanged(ref _selectedPortBus0, value);
     }
 
-    private string _statusText = "Select a port and click Connect.";
+    private string? _selectedPortBus1;
+    public string? SelectedPortBus1
+    {
+        get => _selectedPortBus1;
+        set => this.RaiseAndSetIfChanged(ref _selectedPortBus1, value);
+    }
+
+    private string _statusText = "Select ports and click Connect.";
     public string StatusText
     {
         get => _statusText;
@@ -84,7 +93,6 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
 
             this.RaiseAndSetIfChanged(ref _selectedFlower, value);
 
-            // Rewire selection change subscription
             _selectedFlowerSub?.Dispose();
             _selectedFlowerSub = null;
 
@@ -125,7 +133,7 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
 
     // ========= Commands =========
     public ReactiveCommand<Unit, Unit> RefreshPortsCommand { get; }
-    public ReactiveCommand<Unit, Unit> ConnectCommand { get; }
+    public ReactiveCommand<Unit, Unit> ConnectBusesCommand { get; }    // ⬅️ replaces ConnectCommand
     public ReactiveCommand<Unit, Unit> LoadShowCommand { get; }
     public ReactiveCommand<Unit, Unit> PlayCommand { get; }
     public ReactiveCommand<Unit, Unit> StopCommand { get; }
@@ -150,17 +158,17 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
 
     // ========= Ctor =========
     public AppViewModel(
-        ITransport serial,
-        ShowPlayerService player,
+        IBusDirectory busDirectory,          // ⬅️ injected instead of ITransport
+        IShowPlayerService player,
         IShowProjectStore showStore,
         IFlowerService flowerService)
     {
-        _serial = serial;
+        _busDirectory = busDirectory;
         _player = player;
         _showStore = showStore;
         _flowerService = flowerService;
 
-        // HasFlowers observable (seed + react to collection changes)
+        // HasFlowers observable
         var hasFlowersObs =
             Observable.Merge(
                 Observable.Return(Flowers.Count),
@@ -175,7 +183,7 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
 
         // Commands
         RefreshPortsCommand = ReactiveCommand.Create(RefreshPorts);
-        ConnectCommand = ReactiveCommand.CreateFromTask(ConnectAsync);
+        ConnectBusesCommand = ReactiveCommand.CreateFromTask(ConnectBusesAsync);
 
         ConnectFlowerCommand = ReactiveCommand.CreateFromTask(ConnectFlowerAsync, this.WhenAnyValue(vm => vm.SelectedFlower).Select(sf => sf != null));
         DisconnectFlowerCommand = ReactiveCommand.CreateFromTask(DisconnectFlowerAsync, this.WhenAnyValue(vm => vm.SelectedFlower).Select(sf => sf != null));
@@ -210,32 +218,81 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
             .Subscribe(_ => RaiseFleetStatesChanged());
 
         RefreshPorts();
+        _ = Task.Run(async () =>
+        {
+            await Task.Delay(500);
+            RefreshPorts();
+        });
         _ = LoadFlowersAsync(); // initial load
     }
 
-    // ========= Serial & Show Actions =========
+    // ========= Serial (multi-bus) & Show Actions =========
     private void RefreshPorts()
     {
+        var found = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+        // RJCP (preferred)
+        try
+        {
+            // FIX: SerialPortStream.GetPortNames() is an instance method, not static.
+            using (var sps = new SerialPortStream())
+            {
+                foreach (var p in sps.GetPortNames())
+                    if (!string.IsNullOrWhiteSpace(p)) found.Add(p.Trim());
+            }
+        }
+        catch { /* ignore */ }
+
+        // Fallback to BCL
+        try
+        {
+            foreach (var p in System.IO.Ports.SerialPort.GetPortNames())
+                if (!string.IsNullOrWhiteSpace(p)) found.Add(p.Trim());
+        }
+        catch { /* ignore */ }
+
+        // Sort nicely (COM1, COM2, ..., COM10)
+        static int PortOrder(string name)
+        {
+            if (name.StartsWith("COM", StringComparison.OrdinalIgnoreCase) &&
+                int.TryParse(name.Substring(3), out var n)) return n;
+            return int.MaxValue;
+        }
+
         Ports.Clear();
-        using var portStream = new SerialPortStream();
-        foreach (var p in portStream.GetPortNames())
+        foreach (var p in found.OrderBy(PortOrder).ThenBy(p => p))
             Ports.Add(p);
 
-        if (Ports.Count > 0) SelectedPort = Ports[0];
-        StatusText = "Ports refreshed.";
+        // Seed selections if empty
+        if (Ports.Count > 0 && string.IsNullOrWhiteSpace(SelectedPortBus0))
+            SelectedPortBus0 = Ports[0];
+
+        if (Ports.Count > 1 && string.IsNullOrWhiteSpace(SelectedPortBus1))
+            SelectedPortBus1 = Ports.Count > 1 ? Ports[1] : Ports[0];
+
+        StatusText = Ports.Count == 0 ? "No serial ports found." : $"Found {Ports.Count} port(s).";
     }
 
-    private async Task ConnectAsync()
+
+    private async Task ConnectBusesAsync()
     {
-        if (string.IsNullOrWhiteSpace(SelectedPort))
+        var configs = new List<BusConfig>();
+
+        if (!string.IsNullOrWhiteSpace(SelectedPortBus0))
+            configs.Add(new BusConfig("bus0", SelectedPortBus0!, 115200));
+
+        if (!string.IsNullOrWhiteSpace(SelectedPortBus1))
+            configs.Add(new BusConfig("bus1", SelectedPortBus1!, 115200));
+
+        if (configs.Count == 0)
         {
-            await AppendAsync("No port selected.\n");
+            await AppendAsync("No ports selected for any bus.\n");
             return;
         }
 
-        await _serial.OpenAsync(SelectedPort, 115200);
-        StatusText = $"Connected: {SelectedPort}";
-        await AppendAsync($"Connected to {SelectedPort}\n");
+        await _busDirectory.OpenAsync(configs);
+        StatusText = $"Connected: {string.Join(", ", configs.Select(c => $"{c.BusId}={c.Port}"))}";
+        await AppendAsync(StatusText + "\n");
     }
 
     private async Task LoadShowAsync()
@@ -255,7 +312,6 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
     private async Task PlayAsync()
     {
         if (_project is null) { await AppendAsync("No show loaded.\n"); return; }
-        if (!_serial.IsOpen) { await AppendAsync("Not connected.\n"); return; }
 
         _ = Task.Run(async () =>
         {
@@ -291,7 +347,7 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
         if (flower is null) return;
 
         await AppendAsync($"Connecting to flower Id={flower.Id}...\n");
-        await Task.Delay(300); // TODO: real connect
+        await Task.Delay(300); // TODO: real connect/ping on flower.BusId
         flower.ConnectionStatus = ConnectionStatus.Connected;
         await _flowerService.UpdateAsync(flower);
         await SaveFlowersAsync();
@@ -436,12 +492,10 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
     // ========= Fleet Observer Wiring =========
     private void WireFleetObservers()
     {
-        // Unsubscribe old
         _flowersChangedSub?.Dispose();
         foreach (var d in _itemStatusSubs) d.Dispose();
         _itemStatusSubs.Clear();
 
-        // Subscribe to collection changes
         if (Flowers is INotifyCollectionChanged incc)
         {
             _flowersChangedSub =
@@ -456,7 +510,6 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
                     });
         }
 
-        // Initial wire for current items
         RewireItemSubscriptions();
         RaiseFleetStatesChanged();
     }
