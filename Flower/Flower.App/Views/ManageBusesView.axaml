@@ -1,6 +1,8 @@
 <UserControl
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:ac="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls"
+    xmlns:conv="using:Flower.App.Utilities"
     xmlns:vm="clr-namespace:Flower.App.ViewModels"
     x:Class="Flower.App.Views.ManageBusesView"
     x:DataType="vm:IManageBusesViewModel">
@@ -37,7 +39,18 @@
       <Setter Property="FontSize" Value="18"/>
       <Setter Property="FontWeight" Value="SemiBold"/>
     </Style>
+
+    <Style Selector="ac|NumericUpDown">
+        <Setter Property="FontSize" Value="18"/>
+        <Setter Property="MinHeight" Value="48"/>
+        <Setter Property="Padding" Value="12,8"/>
+        <Setter Property="MinWidth" Value="220"/>
+    </Style>
   </UserControl.Styles>
+
+    <UserControl.Resources>
+        <conv:ConnectionStatusToBrushConverter x:Key="StatusBrush" />
+    </UserControl.Resources>
 
 <Grid ColumnDefinitions="2*,3*" RowDefinitions="Auto,*,Auto" Margin="16">
 
@@ -46,7 +59,6 @@
         ColumnDefinitions="Auto,Auto,*,Auto,Auto"
         Margin="0,0,0,8">
     <Button Grid.Column="0" Content="Refresh Ports" Command="{Binding RefreshPortsCommand}"/>
-    <Button Grid.Column="1" Content="Save" Command="{Binding SaveCommand}" Margin="8,0,0,0"/>
     <TextBlock Grid.Column="2" Text="{Binding Status}" VerticalAlignment="Center" Opacity="0.7" Margin="16,0,0,0"/>
     <Button Grid.Column="3" Content="Connect All" Command="{Binding ConnectAllCommand}" Margin="16,0,0,0"/>
     <Button Grid.Column="4" Content="Disconnect All" Command="{Binding DisconnectAllCommand}" Margin="8,0,0,0"/>
@@ -61,7 +73,7 @@
             <TextBlock Grid.Column="0" Text="{Binding BusId}" FontWeight="SemiBold"/>
             <TextBlock Grid.Column="1" Text="{Binding Port}" Margin="12,0,0,0"/>
             <TextBlock Grid.Column="2" Text="{Binding Baud}" Margin="12,0,0,0" HorizontalAlignment="Right"/>
-            <Border Grid.Column="3" Margin="12,0,0,0" Padding="10,4" CornerRadius="999" Background="#EEE">
+            <Border Grid.Column="3" Margin="12,0,0,0" Padding="10,4" CornerRadius="999" Background="{Binding ConnectionStatus, Converter={StaticResource StatusBrush}, ConverterParameter={x:Null}}">
               <TextBlock Text="{Binding ConnectionStatus}"/>
             </Border>
           </Grid>
@@ -75,7 +87,7 @@
 
     <!-- Editor (top row) -->
     <Border Grid.Row="0" Padding="12" Classes="card">
-      <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="160,*">
+      <Grid RowDefinitions="Auto,12,Auto,12,Auto" ColumnDefinitions="160,*">
 
         <!-- Bus Id -->
         <TextBlock Grid.Row="0" Grid.Column="0" Text="Bus Id:" VerticalAlignment="Center" Classes="header"/>
@@ -86,15 +98,15 @@
                    MinWidth="260"/>
 
         <!-- Port -->
-        <TextBlock Grid.Row="1" Grid.Column="0" Text="Port:" VerticalAlignment="Center" Classes="header"/>
-        <ComboBox  Grid.Row="1" Grid.Column="1"
+        <TextBlock Grid.Row="2" Grid.Column="0" Text="Port:" VerticalAlignment="Center" Classes="header"/>
+        <ComboBox  Grid.Row="2" Grid.Column="1"
                    ItemsSource="{Binding Ports}"
                    SelectedItem="{Binding EditPort}"
                    MinWidth="260"/>
 
         <!-- Baud -->
-        <TextBlock Grid.Row="2" Grid.Column="0" Text="Baud:" VerticalAlignment="Center" Classes="header"/>
-        <NumericUpDown Grid.Row="2" Grid.Column="1"
+        <TextBlock Grid.Row="5" Grid.Column="0" Text="Baud:" VerticalAlignment="Center" Classes="header"/>
+        <NumericUpDown Grid.Row="5" Grid.Column="1"
                        Value="{Binding EditBaud}"
                        Minimum="1200" Maximum="1000000" Increment="1200"
                        Width="260" HorizontalAlignment="Left"/>

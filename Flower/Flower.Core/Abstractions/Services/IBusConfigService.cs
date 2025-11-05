@@ -7,7 +7,7 @@ namespace Flower.Core.Abstractions.Services
         ReadOnlyObservableCollection<BusConfig> Buses { get; }
         Task<IReadOnlyList<BusConfig>> GetAllAsync();
         Task LoadAsync(string? fileNameOrPath = "buses.json");
-        Task SaveAsync(string? fileNameOrPath = null);
+        Task SaveAsync(string? fileNameOrPath = "buses.json");
         Task<BusConfig?> GetAsync(string id);
         Task AddAsync(BusConfig Bus);
         Task<bool> UpdateAsync(BusConfig Bus);

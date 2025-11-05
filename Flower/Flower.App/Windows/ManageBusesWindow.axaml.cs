@@ -1,45 +1,31 @@
-using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
-using Avalonia.Markup.Xaml;
 using Flower.App.ViewModels;
 using System;
 
-namespace Flower.App.Windows;
-
-public partial class ManageBusesWindow : Window
+namespace Flower.App.Windows
 {
-    public ManageBusesWindow() => InitializeComponent();
-
-    public ManageBusesWindow(IManageBusesViewModel vm) : this()
+    public partial class ManageBusesWindow : Window
     {
-        DataContext = vm;
-        // Wire the named buttons (x:Name="AddButton" / "CancelButton")
-        var addBtn = this.FindControl<Button>("ConfirmButton");
-        var cancelBtn = this.FindControl<Button>("CancelButton");
-        if (addBtn is not null) addBtn.Click += OnConfirmClicked;
-        if (cancelBtn is not null) cancelBtn.Click += OnCancelClicked;
-    }
+        public ManageBusesWindow() => InitializeComponent();
 
-    private void OnConfirmClicked(object? sender, RoutedEventArgs e)
-    {
-        try
+        public ManageBusesWindow(IManageBusesViewModel vm) : this()
         {
-            if (DataContext is IAddOrUpdateFlowerViewModel vm)
-                vm.ConfirmAsync();
+            DataContext = vm;
+
+            var closeBtn = this.FindControl<Button>("CloseButton");
+
+            if (closeBtn is not null) closeBtn.Click += OnCloseClicked;
         }
-        catch (Exception ex)
+
+
+        private void OnCloseClicked(object? sender, RoutedEventArgs e)
         {
-            System.Diagnostics.Debug.WriteLine(ex.ToString()); // <- shows the exact “Unable to resolve ... while activating ...”
+            if (DataContext is IManageBusesViewModel vm)
+                vm.Close(); // keeps VM semantics
+
+            Close(null);
         }
-    }
-
-
-    private void OnCancelClicked(object? sender, RoutedEventArgs e)
-    {
-        if (DataContext is IManageBusesViewModel vm)
-            vm.Cancel(); // keeps VM semantics
-
-        Close(null);
     }
 }
+

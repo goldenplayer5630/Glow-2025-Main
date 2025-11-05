@@ -1,9 +1,11 @@
 ﻿using Avalonia.Controls;
-using System;
-using System.Reactive;
 using Flower.App.ViewModels;
 using Flower.App.Windows;
+using Flower.Core.Abstractions.Services;
 using Flower.Core.Models;
+using System;
+using System.Linq;
+using System.Reactive;
 
 namespace Flower.App.Windows
 {
@@ -12,6 +14,7 @@ namespace Flower.App.Windows
         private readonly Func<ShowCreatorWindow> _showCreatorWindowFactory;
         private readonly Func<AddFlowerWindow> _addOrUpdateFlowerWindowFactory;
         private readonly Func<ManageBusesWindow> _manageBusesWindowFactory;
+        private readonly IBusConfigService _busCfg;
 
         public MainWindow()
         {
@@ -25,13 +28,15 @@ namespace Flower.App.Windows
             IAppViewModel vm,
             Func<ShowCreatorWindow> showCreatorWindowFactory,
             Func<AddFlowerWindow> addFlowerWindowFactory,
-            Func<ManageBusesWindow> manageBusesWindowFactory
+            Func<ManageBusesWindow> manageBusesWindowFactory,
+            IBusConfigService busCfg
         ) : this()
         {
             DataContext = vm;
             _showCreatorWindowFactory = showCreatorWindowFactory;
             _addOrUpdateFlowerWindowFactory = addFlowerWindowFactory;
             _manageBusesWindowFactory = manageBusesWindowFactory;
+            _busCfg = busCfg;
 
             HookInteractions(vm);
 
@@ -103,6 +108,24 @@ namespace Flower.App.Windows
                 await win.ShowDialog(this);
                 ctx.SetOutput(Unit.Default);
             });
+
+            vm.AssignBusesInteraction.RegisterHandler(async ctx =>
+            {
+                var selectedFlowers = ctx.Input;
+                var busIds = _busCfg.Buses.Select(b => b.BusId).ToList();
+
+                if (busIds.Count == 0)
+                {
+                    // no buses configured: just return null
+                    ctx.SetOutput(null);
+                    return;
+                }
+
+                var win = new AssignBusWindow(busIds, selectedFlowers.Count);
+                var result = await win.ShowDialog<string?>(this);
+                ctx.SetOutput(result);
+            });
+
         }
     }
 }

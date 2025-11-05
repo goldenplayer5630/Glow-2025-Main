@@ -38,6 +38,7 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
     private readonly List<IDisposable> _itemStatusSubs = new();
     private IDisposable? _selectedFlowerSub;
     private readonly ObservableAsPropertyHelper<bool> _hasFlowers;
+    private readonly ObservableAsPropertyHelper<bool> _anySelectedForAssign;
 
     private bool _disposed;
 
@@ -130,6 +131,7 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
     public bool CanConnectAll => HasFlowers && Flowers.Any(f => f.ConnectionStatus != ConnectionStatus.Connected);
     public bool CanDisconnectAll => HasFlowers && Flowers.All(f => f.ConnectionStatus == ConnectionStatus.Connected);
     public bool DisabledConnectAll => !HasFlowers || (!CanConnectAll && !CanDisconnectAll);
+    public bool CanAssignBuses => _anySelectedForAssign.Value;
 
     // ========= Commands =========
     public ReactiveCommand<Unit, Unit> LoadShowCommand { get; }
@@ -142,6 +144,7 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
 
     public ReactiveCommand<Unit, Unit> ConnectAllFlowersCommand { get; }
     public ReactiveCommand<Unit, Unit> DisconnectAllFlowersCommand { get; }
+    public ReactiveCommand<Unit, Unit> AssignBusesCommand { get; }
 
     public ReactiveCommand<Unit, Unit> AddFlowerCommand { get; }
     public ReactiveCommand<Unit, Unit> UpdateFlowerCommand { get; }
@@ -155,6 +158,7 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
 
     public Interaction<Unit, FlowerUnit?> AddFlowerInteraction { get; } = new();
     public Interaction<FlowerUnit, FlowerUnit?> UpdateFlowerInteraction { get; } = new();
+    public Interaction<IReadOnlyList<FlowerUnit>, string?> AssignBusesInteraction { get; } = new();
 
     // ========= Ctor =========
     public AppViewModel(
@@ -180,6 +184,51 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
             .ObserveOn(RxApp.MainThreadScheduler);
 
         _hasFlowers = hasFlowersObs.ToProperty(this, vm => vm.HasFlowers, scheduler: RxApp.MainThreadScheduler);
+
+        // After _hasFlowers setup, wire "any selected" observable
+        var anySelectedObs =
+            Observable.Merge(
+                // seed
+                Observable.Return(Flowers.Any(f => f.AssignSelected)),
+                // when collection changes -> resubscribe row-level changes
+                Observable.FromEventPattern<NotifyCollectionChangedEventHandler, NotifyCollectionChangedEventArgs>(
+                        h => ((INotifyCollectionChanged)Flowers).CollectionChanged += h,
+                        h => ((INotifyCollectionChanged)Flowers).CollectionChanged -= h)
+                    .Select(_ => true)
+                    .StartWith(true)
+                    .Select(_ =>
+                    {
+                        // subscribe to each row's AssignSelected change
+                        foreach (var d in _itemStatusSubs) d.Dispose();
+                        _itemStatusSubs.Clear();
+
+                        foreach (var f in Flowers)
+                        {
+                            if (f is INotifyPropertyChanged inpc)
+                            {
+                                var sub =
+                                    Observable.FromEvent<PropertyChangedEventHandler, PropertyChangedEventArgs>(
+                                            h => (s, e) => h(e),
+                                            h => inpc.PropertyChanged += h,
+                                            h => inpc.PropertyChanged -= h)
+                                        .Where(e => e.PropertyName == nameof(FlowerUnit.AssignSelected))
+                                        .ObserveOn(RxApp.MainThreadScheduler)
+                                        .Subscribe(__ => this.RaisePropertyChanged(nameof(CanAssignBuses)));
+
+                                _itemStatusSubs.Add(sub);
+                            }
+                        }
+
+                        return Flowers.Any(ff => ff.AssignSelected);
+                    })
+            )
+            .DistinctUntilChanged()
+            .ObserveOn(RxApp.MainThreadScheduler);
+
+        _anySelectedForAssign = anySelectedObs.ToProperty(this, vm => vm.CanAssignBuses, scheduler: RxApp.MainThreadScheduler);
+
+        // Command
+        AssignBusesCommand = ReactiveCommand.CreateFromTask(AssignBusesAsync, anySelectedObs);
 
         // Commands
         ConnectFlowerCommand = ReactiveCommand.CreateFromTask(ConnectFlowerAsync, this.WhenAnyValue(vm => vm.SelectedFlower).Select(sf => sf != null));
@@ -275,26 +324,25 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
         StatusText = Ports.Count == 0 ? "No serial ports found." : $"Found {Ports.Count} port(s).";
     }
 
-
-    private async Task ConnectBusesAsync()
+    private async Task AssignBusesAsync()
     {
-        var configs = new List<BusConfig>();
+        var selected = Flowers.Where(f => f.AssignSelected).ToList();
+        if (selected.Count == 0) return;
 
-        if (!string.IsNullOrWhiteSpace(SelectedPortBus0))
-            configs.Add(new BusConfig("bus0", SelectedPortBus0!, 115200));
+        // Ask the dialog which bus to use
+        var chosenBusId = await AssignBusesInteraction.Handle(selected);
+        if (string.IsNullOrWhiteSpace(chosenBusId)) return;
 
-        if (!string.IsNullOrWhiteSpace(SelectedPortBus1))
-            configs.Add(new BusConfig("bus1", SelectedPortBus1!, 115200));
-
-        if (configs.Count == 0)
+        // Update all selected
+        foreach (var f in selected)
         {
-            await AppendAsync("No ports selected for any bus.\n");
-            return;
+            f.BusId = chosenBusId!;
+            f.AssignSelected = false; // clear selection after apply
+            await _flowerService.UpdateAsync(f);
         }
+        await _flowerService.SaveAsync();
 
-        await _busDirectory.OpenAsync(configs);
-        StatusText = $"Connected: {string.Join(", ", configs.Select(c => $"{c.BusId}={c.Port}"))}";
-        await AppendAsync(StatusText + "\n");
+        StatusText = $"Assigned {selected.Count} flower(s) to {chosenBusId}.";
     }
 
     private async Task LoadShowAsync()

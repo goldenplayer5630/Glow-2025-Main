@@ -183,9 +183,11 @@
 
             <!-- Row 1 -->
             <Button Grid.Row="1" Grid.Column="0"
-                    IsEnabled="False"
-                    Content=""
-                    Opacity="0.35"
+                    Content="Assign Buses"
+                    FontSize="16"
+                    Command="{Binding AssignBusesCommand}"
+
+                    IsEnabled="{Binding CanAssignBuses}"
                     Margin="0,0,12,0"/>
             <Button Grid.Row="1" Grid.Column="1"
                     Content="Add"
@@ -211,27 +213,43 @@
           <ListBox.ItemTemplate>
             <DataTemplate x:DataType="models:FlowerUnit">
               <!-- 6 columns now: "Id:", Id, Category, FlowerStatus, ConnDot, Brightness -->
-              <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto,Auto" Margin="0,6">
-                <TextBlock Text="Id:" Margin="0,0,8,0"/>
+              <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto,Auto,Auto,Auto" Margin="0,6">
+                <CheckBox
+                  IsChecked="{Binding AssignSelected}"/>
 
                 <TextBlock Grid.Column="1"
                            Text="{Binding Id}"
                            Width="52"
-                           TextAlignment="Center"/>
+                           TextAlignment="Center"
+                           VerticalAlignment="Center"/>
 
                 <TextBlock Grid.Column="2"
-                           Text="{Binding Category}"/>
+                           Text="{Binding Category}"
+                           VerticalAlignment="Center"/>
 
-                <TextBlock Grid.Column="3"
+                <TextBlock Text="BusId:" 
+                           Margin="0,0,8,0"
+                           Grid.Column="3"
+                           HorizontalAlignment="Right" 
+                           VerticalAlignment="Center"/>
+                <TextBlock Grid.Column="4"
+                           Text="{Binding BusId}"
+                           HorizontalAlignment="Right"
+                           Margin="16,0,0,0"
+                           VerticalAlignment="Center"/>
+
+                <TextBlock Grid.Column="5"
                            Text="{Binding FlowerStatus}"
                            HorizontalAlignment="Right"
-                           Margin="16,0,0,0"/>
+                           Margin="16,0,0,0"
+                           VerticalAlignment="Center"/>
 
                 <!-- Connection status as a colored dot -->
-                <Ellipse Grid.Column="4"
+                <Ellipse Grid.Column="6"
                          Width="12" Height="12"
                          HorizontalAlignment="Right"
-                         Margin="16,0,0,0">
+                         Margin="16,0,0,0"
+                         VerticalAlignment="Center">
                   <Ellipse.Fill>
                     <SolidColorBrush Color="{Binding ConnectionStatus, Converter={StaticResource StatusBrush}, ConverterParameter={x:Null}}"/>
                   </Ellipse.Fill>
@@ -240,9 +258,10 @@
                   </ac:ToolTip.Tip>
                 </Ellipse>
 
-                <TextBlock Grid.Column="5"
+                <TextBlock Grid.Column="7"
                            Text="{Binding CurrentBrightness}"
-                           HorizontalAlignment="Right"
+                           HorizontalAlignment="Right" 
+                           VerticalAlignment="Center"
                            Width="52"
                            TextAlignment="Center"/>
               </Grid>

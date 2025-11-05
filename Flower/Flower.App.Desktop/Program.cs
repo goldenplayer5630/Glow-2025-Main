@@ -79,17 +79,20 @@ public static class Program
                 s.AddTransient<IShowCreatorViewModel, ShowCreatorViewModel>();
                 s.AddTransient<IAddOrUpdateFlowerViewModel, AddOrUpdateFlowerViewModel>();
                 s.AddTransient<IManageBusesViewModel, ManageBusesViewModel>();
+                s.AddTransient<IAssignBusViewModel, AssignBusViewModel>();
 
                 // ============ Views / Windows ============
                 s.AddTransient<ShowCreatorWindow>();
                 s.AddTransient<AddFlowerWindow>();
                 s.AddTransient<ManageBusesWindow>();
+                s.AddTransient<AssignBusWindow>();
                 s.AddTransient<MainWindow>();
 
                 // ============ Factories ============
                 s.AddTransient<Func<ShowCreatorWindow>>(sp => () => sp.GetRequiredService<ShowCreatorWindow>());
                 s.AddTransient<Func<AddFlowerWindow>>(sp => () => sp.GetRequiredService<AddFlowerWindow>());
                 s.AddTransient<Func<ManageBusesWindow>>(sp => () => sp.GetRequiredService<ManageBusesWindow>());
+                s.AddTransient<Func<AssignBusWindow>>(sp => () => sp.GetRequiredService<AssignBusWindow>());
             })
             .Build();
 

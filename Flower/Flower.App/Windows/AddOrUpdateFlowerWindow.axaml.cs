@@ -1,7 +1,6 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
 using Flower.App.ViewModels;
-using Flower.Core.Models;
 using System;
 
 namespace Flower.App.Windows

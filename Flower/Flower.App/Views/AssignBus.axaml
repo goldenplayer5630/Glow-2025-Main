@@ -1,0 +1,23 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:viewmodels="using:Flower.App.ViewModels"
+             xmlns:vm="clr-namespace:Flower.App"
+             x:Class="Flower.App.AssignBus"
+             x:DataType="viewmodels:AssignBusViewModel">
+  <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="Auto,*" Margin="16">
+    <TextBlock Grid.Row="0" Grid.ColumnSpan="2"
+               Text="{Binding HeaderText}"
+               FontSize="20" FontWeight="SemiBold" Margin="0,0,0,12"/>
+
+    <TextBlock Grid.Row="1" Grid.Column="0"
+               Text="Bus Id:"
+               VerticalAlignment="Center"
+               FontSize="18" Margin="0,0,12,0" />
+    <ComboBox  Grid.Row="1" Grid.Column="1"
+               ItemsSource="{Binding BusIds}"
+               SelectedItem="{Binding SelectedBusId}"
+               MinWidth="260"
+               FontSize="18"
+               />
+  </Grid>
+</UserControl>

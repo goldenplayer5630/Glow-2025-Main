@@ -44,7 +44,6 @@ namespace Flower.App.ViewModels
         ReactiveCommand<Unit, Unit> ConnectAllCommand { get; }
         ReactiveCommand<Unit, Unit> DisconnectAllCommand { get; }
 
-        Task ConfirmAsync();
-        void Cancel();
+        void Close();
     }
 }
