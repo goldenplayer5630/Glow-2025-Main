@@ -19,7 +19,7 @@ namespace Flower.Core.Cmds.BuiltIn
             new Dictionary<string, object?>
             {
                 ["endIntensity"] = 0,     // 0..120
-                ["durationMs"] = 1500   // >0
+                ["durationMs"] = 3000   // >0
             };
 
         private static readonly FlowerCategory[] _supported =

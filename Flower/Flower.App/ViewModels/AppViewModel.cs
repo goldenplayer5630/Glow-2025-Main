@@ -26,7 +26,7 @@ namespace Flower.App.ViewModels;
 public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
 {
     // ========= Fields =========
-    private readonly IBusDirectory _busDirectory;        // ⬅️ multi-bus manager
+    private readonly IBusDirectory _busDirectory;  // multi-bus manager
     private readonly IShowPlayerService _player;
     private readonly IShowProjectStore _showStore;
     private readonly IFlowerService _flowerService;
@@ -35,10 +35,15 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
 
     // Subscriptions (fleet + selection)
     private IDisposable? _flowersChangedSub;
-    private readonly List<IDisposable> _itemStatusSubs = new();
+    private readonly List<IDisposable> _itemStatusSubs = new();   // for connection-status watchers (fleet states)
     private IDisposable? _selectedFlowerSub;
     private readonly ObservableAsPropertyHelper<bool> _hasFlowers;
-    private readonly ObservableAsPropertyHelper<bool> _anySelectedForAssign;
+    private bool _canAssignBuses;
+
+    // AssignSelected wiring
+    private readonly List<IDisposable> _assignSubs = new();       // for AssignSelected watchers
+    private readonly ObservableAsPropertyHelper<bool>? _anySelectedForAssign;
+    private readonly List<IDisposable> _assignSelectedSubs = new();
 
     private bool _disposed;
 
@@ -52,22 +57,7 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
         set => this.RaiseAndSetIfChanged(ref _currentPage, value);
     }
 
-    // Two bus selectors instead of one
-    private string? _selectedPortBus0;
-    public string? SelectedPortBus0
-    {
-        get => _selectedPortBus0;
-        set => this.RaiseAndSetIfChanged(ref _selectedPortBus0, value);
-    }
-
-    private string? _selectedPortBus1;
-    public string? SelectedPortBus1
-    {
-        get => _selectedPortBus1;
-        set => this.RaiseAndSetIfChanged(ref _selectedPortBus1, value);
-    }
-
-    private string _statusText = "Select ports and click Connect.";
+    private string _statusText;
     public string StatusText
     {
         get => _statusText;
@@ -125,13 +115,18 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
     public bool CanDisconnect => SelectedFlower?.ConnectionStatus == ConnectionStatus.Connected;
     public bool CanReconnect => SelectedFlower?.ConnectionStatus == ConnectionStatus.Degraded;
     public bool DisabledConnect => !CanConnect && !CanDisconnect && !CanReconnect;
+    public bool CanSendCommand => SelectedFlower?.ConnectionStatus == ConnectionStatus.Connected;
 
     // ========= Visibility Helpers: Fleet =========
     public bool HasFlowers => _hasFlowers.Value;
     public bool CanConnectAll => HasFlowers && Flowers.Any(f => f.ConnectionStatus != ConnectionStatus.Connected);
     public bool CanDisconnectAll => HasFlowers && Flowers.All(f => f.ConnectionStatus == ConnectionStatus.Connected);
     public bool DisabledConnectAll => !HasFlowers || (!CanConnectAll && !CanDisconnectAll);
-    public bool CanAssignBuses => _anySelectedForAssign.Value;
+    public bool CanAssignBuses
+    {
+        get => _canAssignBuses;
+        private set => this.RaiseAndSetIfChanged(ref _canAssignBuses, value);
+    }
 
     // ========= Commands =========
     public ReactiveCommand<Unit, Unit> LoadShowCommand { get; }
@@ -146,6 +141,7 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
     public ReactiveCommand<Unit, Unit> DisconnectAllFlowersCommand { get; }
     public ReactiveCommand<Unit, Unit> AssignBusesCommand { get; }
 
+    public ReactiveCommand<Unit, Unit> SendCommandToFlowerCommand { get; }
     public ReactiveCommand<Unit, Unit> AddFlowerCommand { get; }
     public ReactiveCommand<Unit, Unit> UpdateFlowerCommand { get; }
     public ReactiveCommand<Unit, Unit> DeleteSelectedFlowerCommand { get; }
@@ -159,10 +155,11 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
     public Interaction<Unit, FlowerUnit?> AddFlowerInteraction { get; } = new();
     public Interaction<FlowerUnit, FlowerUnit?> UpdateFlowerInteraction { get; } = new();
     public Interaction<IReadOnlyList<FlowerUnit>, string?> AssignBusesInteraction { get; } = new();
+    public Interaction<FlowerUnit, string?> SendCommandToFlowerInteraction { get; } = new();
 
     // ========= Ctor =========
     public AppViewModel(
-        IBusDirectory busDirectory,          // ⬅️ injected instead of ITransport
+        IBusDirectory busDirectory,
         IShowPlayerService player,
         IShowProjectStore showStore,
         IFlowerService flowerService)
@@ -185,52 +182,52 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
 
         _hasFlowers = hasFlowersObs.ToProperty(this, vm => vm.HasFlowers, scheduler: RxApp.MainThreadScheduler);
 
-        // After _hasFlowers setup, wire "any selected" observable
+        // === AnySelected (reacts to collection and per-item AssignSelected changes) ===
+        var collectionChanges =
+            Observable.FromEventPattern<NotifyCollectionChangedEventHandler, NotifyCollectionChangedEventArgs>(
+                h => ((INotifyCollectionChanged)Flowers).CollectionChanged += h,
+                h => ((INotifyCollectionChanged)Flowers).CollectionChanged -= h)
+            .StartWith(default(EventPattern<NotifyCollectionChangedEventArgs>)); // seed once
+
         var anySelectedObs =
-            Observable.Merge(
-                // seed
-                Observable.Return(Flowers.Any(f => f.AssignSelected)),
-                // when collection changes -> resubscribe row-level changes
-                Observable.FromEventPattern<NotifyCollectionChangedEventHandler, NotifyCollectionChangedEventArgs>(
-                        h => ((INotifyCollectionChanged)Flowers).CollectionChanged += h,
-                        h => ((INotifyCollectionChanged)Flowers).CollectionChanged -= h)
-                    .Select(_ => true)
-                    .StartWith(true)
-                    .Select(_ =>
-                    {
-                        // subscribe to each row's AssignSelected change
-                        foreach (var d in _itemStatusSubs) d.Dispose();
-                        _itemStatusSubs.Clear();
+            collectionChanges
+                .Select(_ =>
+                {
+                    // tear down & rebuild per-item subscriptions
+                    foreach (var d in _assignSubs) d.Dispose();
+                    _assignSubs.Clear();
 
-                        foreach (var f in Flowers)
-                        {
-                            if (f is INotifyPropertyChanged inpc)
-                            {
-                                var sub =
-                                    Observable.FromEvent<PropertyChangedEventHandler, PropertyChangedEventArgs>(
-                                            h => (s, e) => h(e),
-                                            h => inpc.PropertyChanged += h,
-                                            h => inpc.PropertyChanged -= h)
-                                        .Where(e => e.PropertyName == nameof(FlowerUnit.AssignSelected))
-                                        .ObserveOn(RxApp.MainThreadScheduler)
-                                        .Subscribe(__ => this.RaisePropertyChanged(nameof(CanAssignBuses)));
+                    var itemChangedStreams = Flowers
+                        .OfType<INotifyPropertyChanged>()
+                        .Select(inpc =>
+                            Observable.FromEvent<PropertyChangedEventHandler, PropertyChangedEventArgs>(
+                                    h => (s, e) => h(e),
+                                    h => inpc.PropertyChanged += h,
+                                    h => inpc.PropertyChanged -= h)
+                                .Where(e => e.PropertyName == nameof(FlowerUnit.AssignSelected))
+                                .Select(__ => Unit.Default)
+                        )
+                        .ToList();
 
-                                _itemStatusSubs.Add(sub);
-                            }
-                        }
+                    // keep strong refs so we can dispose later
+                    foreach (var s in itemChangedStreams)
+                        _assignSubs.Add(s.Subscribe(_2 => { /* merged below */ }));
 
-                        return Flowers.Any(ff => ff.AssignSelected);
-                    })
-            )
-            .DistinctUntilChanged()
-            .ObserveOn(RxApp.MainThreadScheduler);
+                    // emit current state once, then on any row change
+                    return Observable.Merge(itemChangedStreams)
+                                     .StartWith(Unit.Default)
+                                     .Select(_2 => Flowers.Any(f => f.AssignSelected));
+                })
+                .Switch()
+                .DistinctUntilChanged()
+                .ObserveOn(RxApp.MainThreadScheduler);
 
-        _anySelectedForAssign = anySelectedObs.ToProperty(this, vm => vm.CanAssignBuses, scheduler: RxApp.MainThreadScheduler);
+        _anySelectedForAssign = anySelectedObs
+            .ToProperty(this, vm => vm.CanAssignBuses, scheduler: RxApp.MainThreadScheduler);
 
-        // Command
         AssignBusesCommand = ReactiveCommand.CreateFromTask(AssignBusesAsync, anySelectedObs);
 
-        // Commands
+        // === Other Commands ===
         ConnectFlowerCommand = ReactiveCommand.CreateFromTask(ConnectFlowerAsync, this.WhenAnyValue(vm => vm.SelectedFlower).Select(sf => sf != null));
         DisconnectFlowerCommand = ReactiveCommand.CreateFromTask(DisconnectFlowerAsync, this.WhenAnyValue(vm => vm.SelectedFlower).Select(sf => sf != null));
         ReconnectFlowerCommand = ReactiveCommand.CreateFromTask(ReconnectFlowerAsync, this.WhenAnyValue(vm => vm.SelectedFlower).Select(sf => sf != null));
@@ -252,6 +249,26 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
             await OpenManageBusesInteraction.Handle(Unit.Default);
         });
 
+        SendCommandToFlowerCommand = ReactiveCommand.CreateFromTask(async () =>
+        {
+            var flower = SelectedFlower;
+            if (flower is null)
+            {
+                await AppendAsync("No flower selected.\n");
+                return;
+            }
+
+            var commandResult = await SendCommandToFlowerInteraction.Handle(flower);
+
+            if (string.IsNullOrWhiteSpace(commandResult))
+            {
+                await AppendAsync($"Send command to flower Id={flower.Id} was canceled.\n");
+                return;
+            }
+
+            await AppendAsync($"Send command to flower Id={flower.Id}: {commandResult}\n");
+        });
+
         AddFlowerCommand = ReactiveCommand.CreateFromTask(AddFlowerAsync);
         UpdateFlowerCommand = ReactiveCommand.CreateFromTask(
             UpdateFlowerAsync,
@@ -268,60 +285,17 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
             .ObserveOn(RxApp.MainThreadScheduler)
             .Subscribe(_ => RaiseFleetStatesChanged());
 
-        RefreshPorts();
         _ = Task.Run(async () =>
         {
             await Task.Delay(500);
-            RefreshPorts();
         });
+
         _ = LoadFlowersAsync(); // initial load
     }
 
-    // ========= Serial (multi-bus) & Show Actions =========
-    private void RefreshPorts()
+    private void RecomputeCanAssignBuses()
     {
-        var found = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        // RJCP (preferred)
-        try
-        {
-            // FIX: SerialPortStream.GetPortNames() is an instance method, not static.
-            using (var sps = new SerialPortStream())
-            {
-                foreach (var p in sps.GetPortNames())
-                    if (!string.IsNullOrWhiteSpace(p)) found.Add(p.Trim());
-            }
-        }
-        catch { /* ignore */ }
-
-        // Fallback to BCL
-        try
-        {
-            foreach (var p in System.IO.Ports.SerialPort.GetPortNames())
-                if (!string.IsNullOrWhiteSpace(p)) found.Add(p.Trim());
-        }
-        catch { /* ignore */ }
-
-        // Sort nicely (COM1, COM2, ..., COM10)
-        static int PortOrder(string name)
-        {
-            if (name.StartsWith("COM", StringComparison.OrdinalIgnoreCase) &&
-                int.TryParse(name.Substring(3), out var n)) return n;
-            return int.MaxValue;
-        }
-
-        Ports.Clear();
-        foreach (var p in found.OrderBy(PortOrder).ThenBy(p => p))
-            Ports.Add(p);
-
-        // Seed selections if empty
-        if (Ports.Count > 0 && string.IsNullOrWhiteSpace(SelectedPortBus0))
-            SelectedPortBus0 = Ports[0];
-
-        if (Ports.Count > 1 && string.IsNullOrWhiteSpace(SelectedPortBus1))
-            SelectedPortBus1 = Ports.Count > 1 ? Ports[1] : Ports[0];
-
-        StatusText = Ports.Count == 0 ? "No serial ports found." : $"Found {Ports.Count} port(s).";
+        CanAssignBuses = Flowers.Any(f => f.AssignSelected);
     }
 
     private async Task AssignBusesAsync()
@@ -342,6 +316,7 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
         }
         await _flowerService.SaveAsync();
 
+        await AppendAsync($"Assigned {selected.Count} flower(s) to {chosenBusId}.\n");
         StatusText = $"Assigned {selected.Count} flower(s) to {chosenBusId}.";
     }
 
@@ -382,6 +357,8 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
         await _flowerService.LoadAsync();
         StatusText = $"Loaded {Flowers.Count} flowers.";
         WireFleetObservers();
+        WireAssignSelectedObservers();
+        RecomputeCanAssignBuses();
     }
 
     private async Task SaveFlowersAsync()
@@ -526,6 +503,7 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
         this.RaisePropertyChanged(nameof(CanDisconnect));
         this.RaisePropertyChanged(nameof(CanReconnect));
         this.RaisePropertyChanged(nameof(DisabledConnect));
+        this.RaisePropertyChanged(nameof(CanSendCommand));
         this.RaisePropertyChanged(nameof(SelectedFlowerInfo));
     }
 
@@ -556,12 +534,42 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
                     .Subscribe(_ =>
                     {
                         RewireItemSubscriptions();
+                        WireAssignSelectedObservers(); 
                         RaiseFleetStatesChanged();
+                        RecomputeCanAssignBuses();   
                     });
         }
 
         RewireItemSubscriptions();
         RaiseFleetStatesChanged();
+    }
+
+    private void WireAssignSelectedObservers()
+    {
+        // Clear previous row-level watchers
+        foreach (var d in _assignSelectedSubs) d.Dispose();
+        _assignSelectedSubs.Clear();
+
+        // Re-subscribe to each flower's AssignSelected change
+        foreach (var f in Flowers)
+        {
+            if (f is INotifyPropertyChanged inpc)
+            {
+                var sub =
+                    Observable.FromEvent<PropertyChangedEventHandler, PropertyChangedEventArgs>(
+                            h => (s, e) => h(e),
+                            h => inpc.PropertyChanged += h,
+                            h => inpc.PropertyChanged -= h)
+                        .Where(e => e.PropertyName == nameof(FlowerUnit.AssignSelected))
+                        .ObserveOn(RxApp.MainThreadScheduler)
+                        .Subscribe(_ => RecomputeCanAssignBuses());
+
+                _assignSelectedSubs.Add(sub);
+            }
+        }
+
+        // Recompute once for current state
+        RecomputeCanAssignBuses();
     }
 
     private void RewireItemSubscriptions()
@@ -599,8 +607,17 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
 
         _flowersChangedSub?.Dispose();
         _selectedFlowerSub?.Dispose();
+
         foreach (var d in _itemStatusSubs) d.Dispose();
         _itemStatusSubs.Clear();
+
+        foreach (var d in _assignSubs) d.Dispose();
+        _assignSubs.Clear();
+
         _hasFlowers?.Dispose();
+        _anySelectedForAssign?.Dispose();
+
+        foreach (var d in _assignSelectedSubs) d.Dispose();
+        _assignSelectedSubs.Clear();
     }
 }

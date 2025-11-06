@@ -1,0 +1,67 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:viewmodel="clr-namespace:Flower.App.ViewModels"
+             xmlns:core="clr-namespace:Flower.Core.Records;assembly=Flower.Core"
+             xmlns:models="clr-namespace:Flower.Core.Models;assembly=Flower.Core"
+             x:Class="Flower.App.Views.SendCommandToFlowerView"
+             x:DataType="viewmodel:SendCommandToFlowerViewModel">
+
+  <Grid RowDefinitions="Auto,*,Auto,*,Auto,*,Auto"
+        ColumnDefinitions="160,*"
+        Margin="16">
+
+    <!-- Header -->
+    <TextBlock Grid.Row="0" Grid.ColumnSpan="2"
+               Text="{Binding HeaderText}"
+               FontSize="20" FontWeight="SemiBold"
+               Margin="0,0,0,12"/>
+
+    <!-- Command selector -->
+    <TextBlock Grid.Row="2" Grid.Column="0"
+               Text="Command:" Margin="0,0,12,0"
+               VerticalAlignment="Center"/>
+    <ComboBox Grid.Row="2" Grid.Column="1"
+              ItemsSource="{Binding CommandOptions}"
+              SelectedItem="{Binding SelectedCommand}"
+              MinWidth="280">
+      <ComboBox.ItemTemplate>
+        <!-- NOTE: CommandOption is in Flower.Core.Records -->
+        <DataTemplate x:DataType="core:CommandOption">
+          <TextBlock Text="{Binding Title}"/>
+        </DataTemplate>
+      </ComboBox.ItemTemplate>
+    </ComboBox>
+
+    <!-- Arguments -->
+    <TextBlock Grid.Row="4" Grid.Column="0"
+               Text="Arguments:" Margin="0,8,12,0"
+               VerticalAlignment="Top"/>
+    <Border Grid.Row="4" Grid.Column="1"
+            Padding="8" CornerRadius="8"
+            BorderBrush="#DDD" BorderThickness="1">
+      <ItemsControl ItemsSource="{Binding ArgEntries}">
+        <ItemsControl.ItemTemplate>
+          <!-- NOTE: ArgEntry is in Flower.Core.Models -->
+          <DataTemplate x:DataType="models:ArgEntry">
+            <Grid ColumnDefinitions="*,160" Margin="0,6,0,0">
+              <TextBlock Grid.Column="0" Text="{Binding Name}" VerticalAlignment="Center" Margin="0,0,12,0"/>
+              <NumericUpDown Grid.Column="1"
+                             Value="{Binding Value}"
+                             Minimum="0" Maximum="1000000" Increment="1"
+                             Width="160" HorizontalAlignment="Left"/>
+            </Grid>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </Border>
+
+    <!-- JSON preview -->
+    <TextBlock Grid.Row="6" Grid.Column="0"
+               Text="JSON preview:" Margin="0,8,12,0"
+               VerticalAlignment="Top"/>
+    <TextBox Grid.Row="6" Grid.Column="1"
+             Text="{Binding ArgsJson}"
+             IsReadOnly="True" AcceptsReturn="True"
+             Height="100" />
+  </Grid>
+</UserControl>

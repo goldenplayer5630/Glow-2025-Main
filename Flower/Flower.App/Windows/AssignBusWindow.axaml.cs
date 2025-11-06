@@ -1,33 +1,40 @@
-using Avalonia;
 using Avalonia.Controls;
-using Avalonia.Input;
-using Avalonia.Markup.Xaml;
+using Avalonia.Interactivity;
 using Flower.App.ViewModels;
 using System.Collections.Generic;
 using System.Linq;
 
-namespace Flower.App;
+namespace Flower.App.Windows;
 
 public partial class AssignBusWindow : Window
 {
-    private readonly AssignBusViewModel _vm;
+    private readonly IAssignBusViewModel _vm;
 
-    // Pass in busIds and (optionally) how many flowers you selected
-    public AssignBusWindow(IEnumerable<string> busIds, int selectedCount = 0)
+    public AssignBusWindow()
     {
         InitializeComponent();
-        _vm = new AssignBusViewModel(busIds.ToList() ?? new List<string>(), selectedCount);
+    }
+
+    public AssignBusWindow(IEnumerable<string> busIds, int selectedCount = 0) : this()
+    {
+        _vm = new AssignBusViewModel(busIds?.ToList() ?? new List<string>(), selectedCount);
         DataContext = _vm;
-        this.KeyDown += AssignBusWindow_KeyDown; // allow Esc to cancel
+
+        var confirmButton = this.FindControl<Button>("ConfirmButton");
+        var cancelBtn = this.FindControl<Button>("CancelButton");
+
+        if (confirmButton is not null) confirmButton.Click += OnConfirmClicked;
+        if (cancelBtn is not null) cancelBtn.Click += OnCancelClicked;
     }
 
-    private void AssignBusWindow_KeyDown(object? sender, KeyEventArgs e)
+    private void OnConfirmClicked(object? sender, RoutedEventArgs e)
     {
-        if (e.Key == Key.Escape) Close(null);
+        if (DataContext is IAssignBusViewModel vm && _vm.CanConfirm)
+            Close(_vm.SelectedBusId);
+        else
+            Close(null);
     }
 
-    private void OnConfirmClicked(object? sender, Avalonia.Interactivity.RoutedEventArgs e)
-    {
-        if (_vm.CanConfirm) Close(_vm.SelectedBusId);
-    }
+    private void OnCancelClicked(object? sender, RoutedEventArgs e)
+        => Close(null);
 }

@@ -38,11 +38,17 @@
     <Compile Update="Views\AddOrUpdateFlowerView.axaml.cs">
       <DependentUpon>AddOrUpdateFlowerView.axaml</DependentUpon>
     </Compile>
+    <Compile Update="Views\AssignBusView.axaml.cs">
+      <DependentUpon>AssignBusView.axaml</DependentUpon>
+    </Compile>
     <Compile Update="Views\SettingsView.axaml.cs">
       <DependentUpon>SettingsView.axaml</DependentUpon>
     </Compile>
     <Compile Update="Windows\AddOrUpdateFlowerWindow.axaml.cs">
       <DependentUpon>AddOrUpdateFlowerWindow.axaml</DependentUpon>
+    </Compile>
+    <Compile Update="Windows\SendCommandToFlowerWindow.axaml.cs">
+      <DependentUpon>SendCommandToFlowerWindow.axaml</DependentUpon>
     </Compile>
   </ItemGroup>
 </Project>

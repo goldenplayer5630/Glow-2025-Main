@@ -28,9 +28,6 @@ namespace Flower.App.ViewModels
 
         object? CurrentPage { get; set; }
 
-        string? SelectedPortBus0 { get; set; }
-        string? SelectedPortBus1 { get; set; }
-
         string StatusText { get; set; }
         string MonitorText { get; set; }
 
@@ -45,6 +42,7 @@ namespace Flower.App.ViewModels
         bool CanDisconnect { get; }
         bool CanReconnect { get; }
         bool DisabledConnect { get; }
+        bool CanSendCommand { get; }
 
         // ========= Visibility Helpers: Fleet =========
         bool HasFlowers { get; }
@@ -64,6 +62,7 @@ namespace Flower.App.ViewModels
         ReactiveCommand<Unit, Unit> ConnectAllFlowersCommand { get; }
         ReactiveCommand<Unit, Unit> DisconnectAllFlowersCommand { get; }
 
+        ReactiveCommand<Unit, Unit> SendCommandToFlowerCommand { get; }
         ReactiveCommand<Unit, Unit> AddFlowerCommand { get; }
         ReactiveCommand<Unit, Unit> UpdateFlowerCommand { get; }
         ReactiveCommand<Unit, Unit> DeleteSelectedFlowerCommand { get; }
@@ -74,5 +73,6 @@ namespace Flower.App.ViewModels
 
         Interaction<Unit, FlowerUnit?> AddFlowerInteraction { get; }
         Interaction<FlowerUnit, FlowerUnit?> UpdateFlowerInteraction { get; }
+        Interaction<FlowerUnit, string?> SendCommandToFlowerInteraction { get; }
     }
 }

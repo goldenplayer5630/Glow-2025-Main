@@ -140,6 +140,11 @@
         <Button Grid.Row="2" Grid.Column="2"
                 Content="Disconnect"
                 Command="{Binding DisconnectCommand}"/>
+
+        <Button Grid.Row="2" Grid.Column="4"
+                IsEnabled="False"
+                Content=""
+                Opacity="0.35"/>
       </Grid>
     </Border>
 

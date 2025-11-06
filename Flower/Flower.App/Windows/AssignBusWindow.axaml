@@ -1,33 +1,40 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        xmlns:local="clr-namespace:Flower.App"
-        xmlns:viewmodels="using:Flower.App.ViewModels"
-        xmlns:vm="clr-namespace:Flower.App" 
-        x:Class="Flower.App.AssignBusWindow"
-        x:DataType="viewmodels:AssignBusViewModel"
-        Title="Assign Bus"
-        Width="520" Height="240"
+        xmlns:app="using:Flower.App"
+        xmlns:views="clr-namespace:Flower.App.Views"
+        x:Class="Flower.App.Windows.AssignBusWindow"
+        Title="Manage Buses"
+        Width="460" Height="240"
+        MinWidth="460" MinHeight="240"
+        MaxWidth="460" MaxHeight="240"
         CanResize="False"
         WindowStartupLocation="CenterOwner">
-  <Grid RowDefinitions="*,Auto" Margin="8">
-    <!-- Form -->
-    <Border Grid.Row="0" Padding="8" Classes="card">
-      <local:AssignBus/>
-    </Border>
 
-    <!-- Buttons -->
-    <Grid Grid.Row="1" ColumnDefinitions="*,Auto,Auto,Auto" Margin="0,12,0,0">
+  <!-- Tablet-friendly buttons (match MainView) -->
+  <Window.Styles>
+    <Style Selector="Button">
+      <Setter Property="FontSize" Value="18"/>
+      <Setter Property="MinHeight" Value="56"/>
+      <Setter Property="MinWidth" Value="140"/>
+      <Setter Property="Padding" Value="16,10"/>
+      <Setter Property="CornerRadius" Value="8"/>
+      <Setter Property="HorizontalContentAlignment" Value="Center"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+  </Window.Styles>
 
-      <!-- Spacer in Column 1 (auto) -->
+  <Grid RowDefinitions="*,Auto" Margin="16">
+    <!-- The form (already updated to use NumericUpDown/TextBox without InputScope) -->
+    <views:AssignBusView/>
 
-      <!-- OK (right-most) -->
-      <Button Grid.Column="3"
-              Content="Confirm"
-              MinWidth="120"
-              Margin="8,0,0,0"
-              IsDefault="True"
-              IsEnabled="{Binding CanConfirm}"
-              Click="OnConfirmClicked" />
-    </Grid>
+    <!-- Bottom action row -->
+    <StackPanel Grid.Row="1"
+                Orientation="Horizontal"
+                HorizontalAlignment="Right"
+                Spacing="12"
+                Margin="0,16,0,0">
+      <Button x:Name="CancelButton" Content="Cancel" IsCancel="True"/>
+      <Button x:Name="ConfirmButton"    Content="Confirm"    IsDefault="True"/>
+    </StackPanel>
   </Grid>
 </Window>

@@ -6,6 +6,7 @@
         Title="Add Flower"
         Width="560" Height="360"
         MinWidth="560" MinHeight="360"
+        MaxWidth="560" MaxHeight="360"
         CanResize="False"
         WindowStartupLocation="CenterOwner">
 

@@ -8,6 +8,11 @@ namespace Flower.App.ViewModels
 {
     public interface IAssignBusViewModel
     {
-        string HeaderText { get; }
+        public IReadOnlyList<string> BusIds { get; }
+        public string? SelectedBusId { get; set; }
+
+        public string HeaderText { get; }
+
+        public bool CanConfirm => !string.IsNullOrWhiteSpace(SelectedBusId);
     }
 }

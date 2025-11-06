@@ -1,0 +1,44 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:viewmodels="using:Flower.App.ViewModels"
+             xmlns:vm="clr-namespace:Flower.App.Views"
+             x:Class="Flower.App.Views.AssignBusView"
+              x:DataType="viewmodels:AssignBusViewModel">
+
+  <UserControl.Styles>
+    <Style Selector="Button">
+      <Setter Property="FontSize" Value="18"/>
+      <Setter Property="MinHeight" Value="56"/>
+      <Setter Property="MinWidth" Value="140"/>
+      <Setter Property="Padding" Value="16,10"/>
+      <Setter Property="CornerRadius" Value="8"/>
+      <Setter Property="HorizontalContentAlignment" Value="Center"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+    <Style Selector="ComboBox">
+      <Setter Property="FontSize" Value="18"/>
+      <Setter Property="MinHeight" Value="48"/>
+      <Setter Property="Padding" Value="12,8"/>
+      <Setter Property="MinWidth" Value="220"/>
+      <Setter Property="HorizontalContentAlignment" Value="Left"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+</UserControl.Styles>
+
+  <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="Auto,*" Margin="16">
+    <TextBlock Grid.Row="0" Grid.ColumnSpan="2"
+               Text="{Binding HeaderText}"
+               FontSize="20" FontWeight="SemiBold" Margin="0,0,0,12"/>
+
+    <TextBlock Grid.Row="1" Grid.Column="0"
+               Text="Bus Id:"
+               VerticalAlignment="Center"
+               FontSize="18" Margin="0,0,12,0" />
+
+    <ComboBox  Grid.Row="1" Grid.Column="1"
+               ItemsSource="{Binding BusIds}"
+               SelectedItem="{Binding SelectedBusId}"
+               MinWidth="260"
+               FontSize="18"/>
+  </Grid>
+</UserControl>

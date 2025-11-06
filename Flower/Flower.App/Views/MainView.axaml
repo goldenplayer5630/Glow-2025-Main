@@ -143,9 +143,9 @@
                     Margin="0,0,12,12"/>
 
             <Button Grid.Row="0" Grid.Column="1"
-                    IsEnabled="False"
                     Content="Send Cmd"
-                    Opacity="0.35"
+                    Command="{Binding SendCommandToFlowerCommand}"
+                    IsEnabled="{Binding CanSendCommand}"
                     Margin="0,0,12,12"/>
 
             <StackPanel Grid.Row="0" Grid.Column="2">
@@ -186,7 +186,6 @@
                     Content="Assign Buses"
                     FontSize="16"
                     Command="{Binding AssignBusesCommand}"
-
                     IsEnabled="{Binding CanAssignBuses}"
                     Margin="0,0,12,0"/>
             <Button Grid.Row="1" Grid.Column="1"

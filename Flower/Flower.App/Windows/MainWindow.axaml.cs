@@ -4,6 +4,7 @@ using Flower.App.Windows;
 using Flower.Core.Abstractions.Services;
 using Flower.Core.Models;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reactive;
 
@@ -14,6 +15,7 @@ namespace Flower.App.Windows
         private readonly Func<ShowCreatorWindow> _showCreatorWindowFactory;
         private readonly Func<AddFlowerWindow> _addOrUpdateFlowerWindowFactory;
         private readonly Func<ManageBusesWindow> _manageBusesWindowFactory;
+        private readonly Func<SendCommandToFlowerWindow> _sendCommandToFlowerWindowFactory;
         private readonly IBusConfigService _busCfg;
 
         public MainWindow()
@@ -29,6 +31,7 @@ namespace Flower.App.Windows
             Func<ShowCreatorWindow> showCreatorWindowFactory,
             Func<AddFlowerWindow> addFlowerWindowFactory,
             Func<ManageBusesWindow> manageBusesWindowFactory,
+            Func<SendCommandToFlowerWindow> sendCommandToFlowerWindowFactory,
             IBusConfigService busCfg
         ) : this()
         {
@@ -36,6 +39,7 @@ namespace Flower.App.Windows
             _showCreatorWindowFactory = showCreatorWindowFactory;
             _addOrUpdateFlowerWindowFactory = addFlowerWindowFactory;
             _manageBusesWindowFactory = manageBusesWindowFactory;
+            _sendCommandToFlowerWindowFactory = sendCommandToFlowerWindowFactory;
             _busCfg = busCfg;
 
             HookInteractions(vm);
@@ -111,21 +115,32 @@ namespace Flower.App.Windows
 
             vm.AssignBusesInteraction.RegisterHandler(async ctx =>
             {
-                var selectedFlowers = ctx.Input;
+                var selectedFlowers = ctx.Input; // IReadOnlyList<FlowerUnit>
+                await _busCfg.LoadAsync();
                 var busIds = _busCfg.Buses.Select(b => b.BusId).ToList();
 
-                if (busIds.Count == 0)
-                {
-                    // no buses configured: just return null
-                    ctx.SetOutput(null);
-                    return;
-                }
+                var assignVm = new AssignBusViewModel(busIds, selectedFlowers.Count);
 
                 var win = new AssignBusWindow(busIds, selectedFlowers.Count);
+
+                // Show the modal dialog and return the selected bus id (or null on cancel)
                 var result = await win.ShowDialog<string?>(this);
                 ctx.SetOutput(result);
             });
 
+            vm.SendCommandToFlowerInteraction.RegisterHandler(async ctx =>
+            {
+                var flower = ctx.Input; // FlowerUnit
+                if (flower is null) { ctx.SetOutput(null); return; }
+
+                var win = _sendCommandToFlowerWindowFactory();
+
+                if (win.DataContext is ISendCommandToflowerViewModel vm2)
+                    await vm2.InitAsync(flower);
+
+                var result = await win.ShowDialog<string?>(this);
+                ctx.SetOutput(result);
+            });
         }
     }
 }

@@ -76,6 +76,7 @@ public static class Program
 
                 // ============ ViewModels ============
                 s.AddSingleton<IAppViewModel, AppViewModel>();
+                s.AddTransient<ISendCommandToflowerViewModel, SendCommandToFlowerViewModel>();
                 s.AddTransient<IShowCreatorViewModel, ShowCreatorViewModel>();
                 s.AddTransient<IAddOrUpdateFlowerViewModel, AddOrUpdateFlowerViewModel>();
                 s.AddTransient<IManageBusesViewModel, ManageBusesViewModel>();
@@ -86,6 +87,7 @@ public static class Program
                 s.AddTransient<AddFlowerWindow>();
                 s.AddTransient<ManageBusesWindow>();
                 s.AddTransient<AssignBusWindow>();
+                s.AddTransient<SendCommandToFlowerWindow>();
                 s.AddTransient<MainWindow>();
 
                 // ============ Factories ============
@@ -93,6 +95,7 @@ public static class Program
                 s.AddTransient<Func<AddFlowerWindow>>(sp => () => sp.GetRequiredService<AddFlowerWindow>());
                 s.AddTransient<Func<ManageBusesWindow>>(sp => () => sp.GetRequiredService<ManageBusesWindow>());
                 s.AddTransient<Func<AssignBusWindow>>(sp => () => sp.GetRequiredService<AssignBusWindow>());
+                s.AddTransient<Func<SendCommandToFlowerWindow>>(sp => () => sp.GetRequiredService<SendCommandToFlowerWindow>());
             })
             .Build();
 

@@ -2,16 +2,16 @@ using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 
-namespace Flower.App;
+namespace Flower.App.Views;
 
-public partial class AssignBus : UserControl
+public partial class AssignBusView : UserControl
 {
-    public AssignBus()
+    public AssignBusView()
     {
         InitializeComponent();
     }
 
-    public AssignBus(object vm) : this()
+    public AssignBusView(object vm) : this()
     {
         DataContext = vm;
     }

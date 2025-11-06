@@ -1,0 +1,45 @@
+<!-- Flower.App/Windows/SendCommandToFlowerWindow.axaml -->
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:v="clr-namespace:Flower.App.Views"
+        xmlns:vm="clr-namespace:Flower.App.ViewModels"
+        x:Class="Flower.App.Windows.SendCommandToFlowerWindow"
+        x:DataType="vm:ISendCommandToflowerViewModel"
+        Title="Send Command"
+        Width="640" Height="450"
+        WindowStartupLocation="CenterOwner">
+
+<Window.Styles>
+    <Style Selector="Button">
+      <Setter Property="FontSize" Value="18"/>
+      <Setter Property="MinHeight" Value="56"/>
+      <Setter Property="MinWidth" Value="140"/>
+      <Setter Property="Padding" Value="16,10"/>
+      <Setter Property="CornerRadius" Value="8"/>
+      <Setter Property="HorizontalContentAlignment" Value="Center"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+  </Window.Styles>
+
+  <Grid RowDefinitions="*,Auto" Margin="0">
+    <Border Padding="12" Classes="card">
+      <v:SendCommandToFlowerView/>
+    </Border>
+
+    <Border Grid.Row="1" Padding="12">
+      <Grid ColumnDefinitions="*,Auto,Auto">
+        <Button x:Name="CancelButton"
+                Grid.Column="1"
+                Content="Cancel"
+                MinWidth="120"
+                Margin="0,0,8,0"/>
+        <Button x:Name="ConfirmButton"
+                Grid.Column="2"
+                Content="Send"
+                MinWidth="120"
+                IsDefault="True"
+                IsEnabled="{Binding CanConfirm}"/>
+      </Grid>
+    </Border>
+  </Grid>
+</Window>

@@ -16,8 +16,8 @@ namespace Flower.Core.Cmds.BuiltIn
         private static readonly IReadOnlyDictionary<string, object?> _args =
             new Dictionary<string, object?>
             {
-                ["endIntensity"] = 120,   // 0..120
-                ["durationMs"] = 1500   // >0
+                ["endIntensity"] = 40,   // 0..120
+                ["durationMs"] = 3000   // >0
             };
 
         private static readonly FlowerCategory[] _supported =
