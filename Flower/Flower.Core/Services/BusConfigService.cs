@@ -43,8 +43,6 @@ namespace Bus.Core.Services
                 _buses.Clear();
                 foreach (var l in loaded)
                 {
-                    // reset runtime-only fields
-                    l.ConnectionStatus = ConnectionStatus.Disconnected;
                     _buses.Add(l);
                 }
             }
@@ -54,7 +52,9 @@ namespace Bus.Core.Services
         public async Task SaveAsync(string? fileNameOrPath = null)
         {
             await _gate.WaitAsync().ConfigureAwait(false);
-            try { await _store.SaveAsync(_buses.ToList(), fileNameOrPath).ConfigureAwait(false); }
+            try {
+                await _store.SaveAsync(_buses.ToList(), fileNameOrPath).ConfigureAwait(false); 
+            }
             finally { _gate.Release(); }
         }
 

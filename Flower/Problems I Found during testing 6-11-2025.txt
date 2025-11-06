@@ -1,0 +1,23 @@
+Problem A:
+if YOU TURN ON LED:40
+
+BUT THEN SEND MOTOR OPEN, LED RAMP WITH 40 AND 3000 MS
+
+THEN FLOWER THINKS ITS OPEN (ITS NOT), AND DOES NOT ACTUALLY CHANGE ITS STATE ON THE FLOWER
+
+Observation A1: Weird is that the flower thinks its open as well, even tough it hasn't opened. This should not be possible cause the flower manages its own state. I think it has something to do with the validation inside the command request factory
+
+Problem B:
+
+Send command close button does not work, also send does not close the prompt but that might be actually better. Furthermore, the send does not append to the log, which might be needed for clarity.
+
+Problem C:
+Small connection problems, sometimes it sends degraded even if its not. I also want to add that if the state is degraded, the flower should not change the open/close state. It is still the last command its send, same for brightness.
+
+Problem D:
+We might want to add a manual way to set the flower to open in the state (so just update it). Also, it will tell us during a open command send if it is already open, then it can just change the state to open on ack and everything will be alright.
+
+Problem E:
+Not really a problem, but the default brightness is now on 20 from now on.
+
+

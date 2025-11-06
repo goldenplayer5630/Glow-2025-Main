@@ -1,5 +1,6 @@
 ﻿// Flower.Core/Services/ShowPlayer.cs
 using Flower.Core.Abstractions.Commands;
+using Flower.Core.Abstractions.Factories;
 using Flower.Core.Abstractions.Services;
 using Flower.Core.Enums;
 using Flower.Core.Models;
@@ -9,15 +10,15 @@ namespace Flower.Core.Services
 {
     public sealed class ShowPlayerService : IShowPlayerService
     {
-        private readonly ICommandRegistry _commands;
-        private readonly ICmdDispatcher _dispatcher; 
+        private readonly ICommandRequestFactory _requestFactory;
+        private readonly ICmdDispatcher _dispatcher;
         private CancellationTokenSource? _cts;
 
         public ShowPlayerService(
-            ICommandRegistry commands,
+            ICommandRequestFactory requestFactory,
             ICmdDispatcher dispatcher)
         {
-            _commands = commands;
+            _requestFactory = requestFactory;
             _dispatcher = dispatcher;
         }
 
@@ -71,69 +72,16 @@ namespace Flower.Core.Services
             foreach (var x in logical)
             {
                 var at = x.Ev.AtMs;
-                var (flowerId, originalCmdId, originalArgs) = x.Ev.Event;
+                var (flowerId, cmdId, originalArgs) = x.Ev.Event;
 
                 var flower = flowers.FirstOrDefault(f => f.Id == flowerId)
                           ?? throw new InvalidOperationException($"Flower {flowerId} missing from project.");
 
-                // Start with originals; we may rewrite below
-                var cmdId = originalCmdId;
-                var args = new Dictionary<string, object?>(originalArgs ?? new Dictionary<string, object?>());
-
-                // Resolve command (after potential rewrite below we’ll re-resolve)
-                var cmd = _commands.GetById(cmdId);
-
-                // Validate support
-                if (!cmd.SupportedCategories.Contains(flower.Category))
-                    throw new InvalidOperationException($"Command {cmd.Id} not supported for {flower.Category}.");
-
-                // --- Idempotency + smart rewrite ---
-                // If OPEN/CLOSE is a no-op, we’ll skip it via ShouldSkip.
-                // If a combined motor+led.ramp is a no-op for the motor, rewrite to plain led.ramp.
-                Func<FlowerUnit, bool>? shouldSkip = cmd.Id switch
-                {
-                    "motor.open" => f => f.FlowerStatus == FlowerStatus.Open,
-                    "motor.close" => f => f.FlowerStatus == FlowerStatus.Closed,
-                    _ => null
-                };
-
-                bool isNoOpNow = shouldSkip?.Invoke(flower) ?? false;
-
-                // Combined command rewrite → led.ramp (keep endIntensity & durationMs)
-                if (isNoOpNow && (cmd.Id == "motor.open.led.ramp" || cmd.Id == "motor.close.led.ramp"))
-                {
-                    cmdId = "led.ramp";
-                    args = new Dictionary<string, object?>
-                    {
-                        ["endIntensity"] = args["endIntensity"],
-                        ["durationMs"] = args["durationMs"]
-                    };
-                }
-
-                if (cmdId != originalCmdId)
-                    cmd = _commands.GetById(cmdId);
-
-                // Validate args for the (possibly) rewritten command
-                cmd.ValidateArgs(flower.Category, args);
-
-                // Expected state changes
-                var onAck = cmd.StateOnAck(flower.Category, args);
-                var onTimeout = static (FlowerUnit f) =>
-                {
-                    f.ConnectionStatus = ConnectionStatus.Degraded;
-                    return f;
-                };
-
-                // For rewritten led.ramp, ShouldSkip usually not needed; for plain open/close we keep it.
-                var req = new CommandRequest(
-                    BusId: flower.BusId,
-                    FlowerId: flowerId,
-                    CommandId: cmd.Id,
-                    Args: args,
-                    AckTimeout: TimeSpan.FromMilliseconds(400),
-                    StateOnAck: onAck,
-                    StateOnTimeout: onTimeout,
-                    ShouldSkip: shouldSkip // null for non-motor commands
+                // Single source of truth: factory builds the request (validates, rewrites, sets frames & state handlers)
+                var req = _requestFactory.BuildFor(
+                    flower,
+                    cmdId,
+                    originalArgs
                 );
 
                 list.Add(new DispatchableEvent(at, req));
@@ -141,8 +89,6 @@ namespace Flower.Core.Services
 
             return list;
         }
-
-
         private async Task RunTimelineAsync(
             IReadOnlyList<DispatchableEvent> events,
             int loopMs,

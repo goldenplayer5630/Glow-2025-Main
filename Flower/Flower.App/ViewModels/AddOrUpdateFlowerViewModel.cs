@@ -19,6 +19,7 @@ namespace Flower.App.ViewModels
         private ConnectionStatus _origConnectionStatus;
         private FlowerStatus _origFlowerStatus;
         private int _origBrightness;
+        private string? _origBusId;
 
         // Editable state
         private int _idValue = 1; // 1..30
@@ -72,6 +73,7 @@ namespace Flower.App.ViewModels
                 _origConnectionStatus = ConnectionStatus.Disconnected;
                 _origFlowerStatus = FlowerStatus.Closed;
                 _origBrightness = 0;
+                _origBusId = null;
 
                 IdValue = SuggestNextFreeId(list);
             }
@@ -87,6 +89,7 @@ namespace Flower.App.ViewModels
                 _origConnectionStatus = existing.ConnectionStatus;
                 _origFlowerStatus = existing.FlowerStatus;
                 _origBrightness = existing.CurrentBrightness;
+                _origBusId = existing.BusId;
             }
 
             // refresh buttons after init
@@ -206,7 +209,8 @@ namespace Flower.App.ViewModels
                     Category = _selectedCategory,
                     ConnectionStatus = _originalId is null ? ConnectionStatus.Disconnected : _origConnectionStatus,
                     FlowerStatus = _originalId is null ? FlowerStatus.Closed : _origFlowerStatus,
-                    CurrentBrightness = _originalId is null ? 0 : _origBrightness
+                    CurrentBrightness = _originalId is null ? 0 : _origBrightness,
+                    BusId = _originalId is null ? null : _origBusId
                 };
 
                 CloseRequested?.Invoke(this, unit);

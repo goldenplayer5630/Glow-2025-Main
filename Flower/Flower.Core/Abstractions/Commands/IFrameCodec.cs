@@ -9,7 +9,6 @@ namespace Flower.Core.Abstractions.Commands
 {
     public interface IFrameCodec
     {
-        byte[] Encode(ProtocolEnvelope env); // Add SOF/EOF/len/CRC here
         bool TryDecode(ReadOnlySpan<byte> frame, out ProtocolEnvelope env);
     }
 }

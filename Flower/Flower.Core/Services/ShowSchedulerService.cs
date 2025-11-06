@@ -28,7 +28,7 @@ public sealed class ShowSchedulerService : IShowSchedulerService
                 if (wait > 0) await Task.Delay(wait, ct);
 
                 foreach (var frame in ev.Frames)
-                    await _transport.WriteAsync(frame, ct);   // ← fix here
+                    await _transport.WriteAsync(frame, ct);
             }
 
             if (loopMs > 0)

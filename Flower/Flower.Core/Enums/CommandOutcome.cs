@@ -11,6 +11,7 @@ namespace Flower.Core.Enums
         Nacked, 
         Timeout,
         SkippedNotConnected,
-        SkippedNoOp
+        SkippedNoOp,
+        BusNotConnected
     }
 }

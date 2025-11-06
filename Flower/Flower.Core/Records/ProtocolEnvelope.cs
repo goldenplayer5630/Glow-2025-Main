@@ -11,7 +11,8 @@ namespace Flower.Core.Records
         Guid CorrelationId,   // generated per request
         int FlowerId,
         string CommandId,
-        ReadOnlyMemory<byte> Payload,
+
+        IReadOnlyList<byte[]> Frames,
         ProtocolMessageType Type // Command, Ack, Nack, Event, Heartbeat...
     );
 }

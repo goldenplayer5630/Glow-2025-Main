@@ -70,7 +70,6 @@ namespace Flower.App.ViewModels
 
         // Commands
         public ReactiveCommand<Unit, Unit> RefreshPortsCommand { get; }
-        public ReactiveCommand<Unit, Unit> LoadCommand { get; }
         public ReactiveCommand<Unit, Unit> SaveCommand { get; }
         public ReactiveCommand<Unit, Unit> AddCommand { get; }
         public ReactiveCommand<Unit, Unit> UpdateCommand { get; }
@@ -90,13 +89,6 @@ namespace Flower.App.ViewModels
 
             RefreshPortsCommand = ReactiveCommand.Create(RefreshPorts);
 
-            LoadCommand = ReactiveCommand.CreateFromTask(async () =>
-            {
-                await _busCfg.LoadAsync();
-                Status = $"Loaded {Buses.Count} bus config(s).";
-                SuggestNextFreeBusId();
-            });
-
             SaveCommand = ReactiveCommand.CreateFromTask(async () =>
             {
                 await _busCfg.SaveAsync();
@@ -114,7 +106,7 @@ namespace Flower.App.ViewModels
                     return;
                 }
 
-                var cfg = new BusConfig(EditBusId.Trim(), EditPort!.Trim(), EditBaud)
+                var cfg = new BusConfig(EditBusId.Trim(), EditPort!.Trim(), EditBaud, ConnectionStatus.Disconnected)
                 { ConnectionStatus = ConnectionStatus.Disconnected };
 
                 await _busCfg.AddAsync(cfg);
@@ -222,7 +214,6 @@ namespace Flower.App.ViewModels
                 });
 
             RefreshPorts();
-            _ = LoadCommand.Execute();
         }
 
         private void SuggestNextFreeBusId()

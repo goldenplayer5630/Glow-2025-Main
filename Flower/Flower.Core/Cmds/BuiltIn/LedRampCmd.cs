@@ -16,7 +16,7 @@ namespace Flower.Core.Cmds.BuiltIn
         private static readonly IReadOnlyDictionary<string, object?> _args =
             new Dictionary<string, object?>
             {
-                ["endIntensity"] = 40,  // 0..255
+                ["endIntensity"] = 15,  // 0..255
                 ["durationMs"] = 3000  // >0
             };
 

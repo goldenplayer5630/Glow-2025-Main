@@ -34,7 +34,7 @@ namespace Flower.Core.Cmds.BuiltIn
             FlowerCategory category,
             IReadOnlyDictionary<string, object?> args)
         {
-            var frame = $"{flowerId}/PING\n";
+            var frame = $"{flowerId}/PING:40\n";
             return new[] { Encoding.ASCII.GetBytes(frame) };
         }
 

@@ -26,7 +26,7 @@ namespace Flower.App.ViewModels;
 public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
 {
     // ========= Fields =========
-    private readonly IBusDirectory _busDirectory;  // multi-bus manager
+    private readonly ICommandService _commandService;
     private readonly IShowPlayerService _player;
     private readonly IShowProjectStore _showStore;
     private readonly IFlowerService _flowerService;
@@ -38,7 +38,7 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
     private readonly List<IDisposable> _itemStatusSubs = new();   // for connection-status watchers (fleet states)
     private IDisposable? _selectedFlowerSub;
     private readonly ObservableAsPropertyHelper<bool> _hasFlowers;
-    private bool _canAssignBuses;
+    private bool _canAssignBuses = true;
 
     // AssignSelected wiring
     private readonly List<IDisposable> _assignSubs = new();       // for AssignSelected watchers
@@ -95,7 +95,10 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
                             h => inpc.PropertyChanged += h,
                             h => inpc.PropertyChanged -= h)
                         .Where(e => string.IsNullOrEmpty(e.PropertyName) ||
-                                    e.PropertyName == nameof(FlowerUnit.ConnectionStatus))
+                                   e.PropertyName == nameof(FlowerUnit.ConnectionStatus) ||
+                                   e.PropertyName == nameof(FlowerUnit.BusId) ||
+                                   e.PropertyName == nameof(FlowerUnit.CurrentBrightness) ||
+                                   e.PropertyName == nameof(FlowerUnit.FlowerStatus))
                         .ObserveOn(RxApp.MainThreadScheduler)
                         .Subscribe(_ => RaiseConnectStatesChanged());
             }
@@ -111,11 +114,11 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
             : $"Selected: Id={SelectedFlower.Id}, Category={SelectedFlower.Category}, Status={SelectedFlower.ConnectionStatus}, Brightness={SelectedFlower.CurrentBrightness}";
 
     // ========= Visibility Helpers: Single Flower =========
-    public bool CanConnect => SelectedFlower?.ConnectionStatus == ConnectionStatus.Disconnected;
+    public bool CanConnect => SelectedFlower?.ConnectionStatus == ConnectionStatus.Disconnected && !string.IsNullOrEmpty(SelectedFlower?.BusId);
     public bool CanDisconnect => SelectedFlower?.ConnectionStatus == ConnectionStatus.Connected;
-    public bool CanReconnect => SelectedFlower?.ConnectionStatus == ConnectionStatus.Degraded;
+    public bool CanReconnect => SelectedFlower?.ConnectionStatus == ConnectionStatus.Degraded && !string.IsNullOrEmpty(SelectedFlower?.BusId);
     public bool DisabledConnect => !CanConnect && !CanDisconnect && !CanReconnect;
-    public bool CanSendCommand => SelectedFlower?.ConnectionStatus == ConnectionStatus.Connected;
+    public bool CanSendCommand => SelectedFlower?.ConnectionStatus == ConnectionStatus.Connected && !string.IsNullOrEmpty(SelectedFlower?.BusId);
 
     // ========= Visibility Helpers: Fleet =========
     public bool HasFlowers => _hasFlowers.Value;
@@ -159,12 +162,13 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
 
     // ========= Ctor =========
     public AppViewModel(
-        IBusDirectory busDirectory,
+        ICommandService commandService,
         IShowPlayerService player,
         IShowProjectStore showStore,
         IFlowerService flowerService)
     {
-        _busDirectory = busDirectory;
+        _statusText = "Ready.";
+        _commandService = commandService;
         _player = player;
         _showStore = showStore;
         _flowerService = flowerService;
@@ -290,7 +294,9 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
             await Task.Delay(500);
         });
 
-        _ = LoadFlowersAsync(); // initial load
+        WireFleetObservers();          // initial wiring to current Flowers collection
+        RecomputeCanAssignBuses();     // compute initial state for the Assign button
+        RaiseFleetStatesChanged();
     }
 
     private void RecomputeCanAssignBuses()
@@ -352,14 +358,6 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
     }
 
     // ========= Flowers: Load/Save =========
-    private async Task LoadFlowersAsync()
-    {
-        await _flowerService.LoadAsync();
-        StatusText = $"Loaded {Flowers.Count} flowers.";
-        WireFleetObservers();
-        WireAssignSelectedObservers();
-        RecomputeCanAssignBuses();
-    }
 
     private async Task SaveFlowersAsync()
     {
@@ -368,20 +366,54 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
     }
 
     // ========= Flowers: Single Actions =========
-    private async Task ConnectFlowerAsync()
+
+    private async Task ConnectFlowerAsync() => await ConnectFlowerAsync(isReconnect: false);
+    private async Task ConnectFlowerAsync(bool isReconnect = false)
     {
         var flower = SelectedFlower;
         if (flower is null) return;
 
-        await AppendAsync($"Connecting to flower Id={flower.Id}...\n");
-        await Task.Delay(300); // TODO: real connect/ping on flower.BusId
-        flower.ConnectionStatus = ConnectionStatus.Connected;
-        await _flowerService.UpdateAsync(flower);
-        await SaveFlowersAsync();
+        // guard: a bus must be assigned
+        if (string.IsNullOrWhiteSpace(flower.BusId) || string.Equals(flower.BusId, "None", StringComparison.OrdinalIgnoreCase))
+        {
+            if (isReconnect)
+                await AppendAsync($"Cannot reconnect flower Id={flower?.Id}: no BusId assigned.\n");
+            else
+                await AppendAsync($"Cannot connect flower Id={flower?.Id}: no BusId assigned.\n");
+            return;
+        }
 
-        RaiseConnectStatesChanged();
-        await AppendAsync($"Connected to flower Id={flower.Id}.\n");
+        if (isReconnect)
+            await AppendAsync($"Reconnecting flower Id={flower.Id} on {flower.BusId}...\n");
+        else
+            await AppendAsync($"Connecting flower Id={flower.Id} on {flower.BusId}...\n");
+        try
+            {
+                // ping has no args
+                var args = new Dictionary<string, object>();
+
+                // This enqueues the command; the dispatcher will set state via PingCmd.StateOnAck()
+                var outcome = await _commandService.SendCommandAsync("ping", flower, args);
+
+                if (outcome != CommandOutcome.Acked)
+                    throw new InvalidOperationException($"Ping command outcome: {outcome}");
+
+                RaiseConnectStatesChanged();
+                await AppendAsync($"Ping OK → flower Id={flower.Id} is {flower.ConnectionStatus}.\n");
+            }
+            catch (Exception ex)
+            {
+                // Mark degraded on failure (mirrors CommandService on-timeout behavior)
+                flower.ConnectionStatus = ConnectionStatus.Degraded;
+                await _flowerService.UpdateAsync(flower);
+                await SaveFlowersAsync();
+
+                RaiseConnectStatesChanged();
+                await AppendAsync($"Ping FAILED for flower Id={flower.Id}\n");
+                await AppendAsync($"Exception: {ex.Message}\n");
+            }
     }
+
 
     private async Task DisconnectFlowerAsync()
     {
@@ -403,9 +435,7 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
         if (flower is null) return;
 
         await AppendAsync($"Reconnecting flower Id={flower.Id}...\n");
-        flower.ConnectionStatus = ConnectionStatus.Disconnected;
-        await _flowerService.UpdateAsync(flower);
-        await ConnectFlowerAsync();
+        await ConnectFlowerAsync(true);
     }
 
     // ========= Flowers: Fleet Actions =========

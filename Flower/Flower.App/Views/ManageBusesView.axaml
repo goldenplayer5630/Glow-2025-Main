@@ -73,9 +73,18 @@
             <TextBlock Grid.Column="0" Text="{Binding BusId}" FontWeight="SemiBold"/>
             <TextBlock Grid.Column="1" Text="{Binding Port}" Margin="12,0,0,0"/>
             <TextBlock Grid.Column="2" Text="{Binding Baud}" Margin="12,0,0,0" HorizontalAlignment="Right"/>
-            <Border Grid.Column="3" Margin="12,0,0,0" Padding="10,4" CornerRadius="999" Background="{Binding ConnectionStatus, Converter={StaticResource StatusBrush}, ConverterParameter={x:Null}}">
-              <TextBlock Text="{Binding ConnectionStatus}"/>
-            </Border>
+            <Ellipse Grid.Column="6"
+                        Width="12" Height="12"
+                        HorizontalAlignment="Right"
+                        Margin="16,0,0,0"
+                        VerticalAlignment="Center">
+                <Ellipse.Fill>
+                <SolidColorBrush Color="{Binding ConnectionStatus, Converter={StaticResource StatusBrush}, ConverterParameter={x:Null}}"/>
+                </Ellipse.Fill>
+                <ac:ToolTip.Tip>
+                <TextBlock Text="{Binding ConnectionStatus}"/>
+                </ac:ToolTip.Tip>
+            </Ellipse>
           </Grid>
         </DataTemplate>
       </ListBox.ItemTemplate>

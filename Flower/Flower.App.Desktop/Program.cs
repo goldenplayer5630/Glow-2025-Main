@@ -5,6 +5,7 @@ using Flower.App.ViewModels;
 using Flower.App.Views;
 using Flower.App.Windows;
 using Flower.Core.Abstractions.Commands;
+using Flower.Core.Abstractions.Factories;
 using Flower.Core.Abstractions.Services;
 using Flower.Core.Abstractions.Stores;
 using Flower.Core.Cmds;
@@ -61,7 +62,7 @@ public static class Program
 
                 // Registry maps string ids <-> command instances (+ optional wire codes)
                 s.AddSingleton<ICommandRegistry, CommandRegistry>();
-
+                s.AddSingleton<ICommandRequestFactory, CommandRequestFactory>();
                 // ============ Show engine ============
                 // Dispatcher (per-flower queues, send->wait ACK->update state)
                 s.AddSingleton<ICmdDispatcher, CmdDispatcher>();
@@ -73,6 +74,8 @@ public static class Program
 
                 // Project store
                 s.AddSingleton<IShowProjectStore, ShowProjectStore>();
+
+                s.AddSingleton<IStartupTask, LoadCoreDataStartupTask>();
 
                 // ============ ViewModels ============
                 s.AddSingleton<IAppViewModel, AppViewModel>();

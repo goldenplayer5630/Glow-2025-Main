@@ -1,4 +1,5 @@
-﻿using Flower.Core.Models;
+﻿using Flower.Core.Enums;
+using Flower.Core.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,7 +10,7 @@ namespace Flower.Core.Abstractions.Commands
 {
     public interface ICommandService
     {
-        Task SendCommandAsync(
+        Task<CommandOutcome> SendCommandAsync(
             string commandId,
             FlowerUnit flowerUnit,
             IReadOnlyDictionary<string, object> args,

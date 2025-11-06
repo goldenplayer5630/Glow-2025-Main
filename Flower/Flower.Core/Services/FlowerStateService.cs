@@ -1,56 +1,34 @@
 ﻿using Flower.Core.Abstractions.Services;
 using Flower.Core.Enums;
 using Flower.Core.Models;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
-namespace Flower.Core.Services
+public sealed class FlowerStateService : IFlowerStateService
 {
-    public sealed class FlowerStateService : IFlowerStateService
+    private readonly IFlowerService _flowers;
+
+    public FlowerStateService(IFlowerService flowers) => _flowers = flowers;
+
+    public async Task TouchConnectionAsync(int id, ConnectionStatus status)
     {
-        private readonly IFlowerService _flowerService;
+        var f = await _flowers.GetAsync(id);
+        if (f is null) return;
 
-        public FlowerStateService(IFlowerService flowerService)
-        {
-            _flowerService = flowerService;
-        }
+        // mutate only what you need
+        f.ConnectionStatus = status;
 
-        public async Task ApplyAsync(int flowerId, Func<FlowerUnit, FlowerUnit> mutate)
-        {
-            var current = await _flowerService.GetAsync(flowerId);
-            if (current is null) return;
+        await _flowers.UpdateAsync(f);     // MUST update the same instance, not a new one
+        await _flowers.SaveAsync();
+    }
 
-            // If FlowerUnit is a class with settable props, you can mutate in-place under FlowerService lock.
-            // To stay neutral, we clone -> update -> replace via UpdateAsync (triggers UI change reliably).
-            var updated = CloneAndMutate(current, mutate);
-            await _flowerService.UpdateAsync(updated);
-        }
+    public async Task ApplyAsync(int id, Func<FlowerUnit, FlowerUnit> mutate)
+    {
+        var f = await _flowers.GetAsync(id);
+        if (f is null) return;
 
-        public async Task TouchConnectionAsync(int flowerId, ConnectionStatus status)
-        {
-            await ApplyAsync(flowerId, f =>
-            {
-                f.ConnectionStatus = status;
-                return f;
-            });
-        }
+        // Ensure the mutator changes the existing instance (your lambdas already do `f => { f.ConnectionStatus = ...; return f; }`)
+        mutate(f);
 
-        private static FlowerUnit CloneAndMutate(FlowerUnit src, Func<FlowerUnit, FlowerUnit> mutate)
-        {
-            // Shallow copy; adjust if FlowerUnit has nested reference types that need deep copy
-            var copy = new FlowerUnit
-            {
-                Id = src.Id,
-                Category = src.Category,
-                ConnectionStatus = src.ConnectionStatus,
-                FlowerStatus = src.FlowerStatus,
-                CurrentBrightness = src.CurrentBrightness,
-                // ... copy other persisted fields the UI depends on
-            };
-            return mutate(copy);
-        }
+        await _flowers.UpdateAsync(f);
+        await _flowers.SaveAsync();
     }
 }

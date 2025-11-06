@@ -1,23 +1,24 @@
-﻿using Flower.Core.Abstractions.Commands;
+﻿// Flower.Infrastructure.Io/SerialPortTransport.cs
+using Flower.Core.Abstractions.Commands;
 using RJCP.IO.Ports;
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Channels;
+using System.Buffers;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Flower.Infrastructure.Io
 {
+    /// <summary>
+    /// Fast line-oriented serial transport.
+    /// - Writes: appends '\n' if missing.
+    /// - Reads: bulk ReadAsync + scan for '\n', trims optional '\r', raises FrameReceived per line.
+    /// </summary>
     public sealed class SerialPortTransport : ITransport
     {
         private readonly SerialPortStream _port = new();
-        private readonly Channel<byte[]> _tx =
-            Channel.CreateUnbounded<byte[]>(new UnboundedChannelOptions { SingleReader = true, SingleWriter = false });
 
-        private Task? _writerLoop;
-        private Task? _readerLoop;
         private CancellationTokenSource? _cts;
+        private Task? _readerLoop;
 
         public bool IsOpen => _port.IsOpen;
         public string? PortName => _port.PortName;
@@ -26,7 +27,7 @@ namespace Flower.Infrastructure.Io
 
         public async Task OpenAsync(string portName, int baud)
         {
-            if (_port.IsOpen) _port.Close();
+            if (_port.IsOpen) await CloseAsync();
 
             _port.PortName = portName;
             _port.BaudRate = baud;
@@ -34,78 +35,138 @@ namespace Flower.Infrastructure.Io
             _port.DataBits = 8;
             _port.StopBits = StopBits.One;
             _port.Handshake = Handshake.None;
-            _port.ReadTimeout = 50;    // short to keep loop responsive
-            _port.WriteTimeout = 250;
+
+            // Keep these short; we rely on async reads (no per-byte timeouts).
+            _port.ReadTimeout = 5;
+            _port.WriteTimeout = 50;
+
+            // Give the driver some headroom to burst ACKs quickly
+            _port.ReadBufferSize = Math.Max(_port.ReadBufferSize, 64 * 1024);
+            _port.WriteBufferSize = Math.Max(_port.WriteBufferSize, 16 * 1024);
 
             _port.Open();
 
             _cts = new CancellationTokenSource();
-            _writerLoop = Task.Run(WriterAsync);
             _readerLoop = Task.Run(() => ReaderAsync(_cts.Token));
-
-            await Task.CompletedTask;
         }
 
-        public async Task WriteAsync(ReadOnlyMemory<byte> frame, CancellationToken ct = default)
-            => await _tx.Writer.WriteAsync(frame.ToArray(), ct);
-
-        private async Task WriterAsync()
+        public Task WriteAsync(ReadOnlyMemory<byte> frame, CancellationToken ct = default)
         {
-            try
+            var span = frame.Span;
+
+            // Ensure single LF terminator (your caller may already send CRLF)
+            if (span.Length == 0 || span[^1] != (byte)'\n')
             {
-                while (await _tx.Reader.WaitToReadAsync())
+                var rented = ArrayPool<byte>.Shared.Rent(span.Length + 1);
+                try
                 {
-                    while (_tx.Reader.TryRead(out var buf))
-                    {
-                        await _port.WriteAsync(buf, 0, buf.Length);
-                        await _port.FlushAsync();
-                    }
+                    span.CopyTo(rented);
+                    rented[span.Length] = (byte)'\n';
+                    _port.Write(rented, 0, span.Length + 1);
                 }
+                finally { ArrayPool<byte>.Shared.Return(rented); }
             }
-            catch { /* TODO logging */ }
+            else
+            {
+                // already newline-terminated
+                _port.Write(span);
+            }
+
+            // RJCP stream writes are synchronous; flush to nudge the OS buffer
+            _port.Flush();
+            return Task.CompletedTask;
         }
 
         private async Task ReaderAsync(CancellationToken ct)
         {
-            var buffer = new List<byte>(256);
+            // Rolling buffer + scan for '\n'
+            byte[] buf = ArrayPool<byte>.Shared.Rent(4096);
+            int used = 0;
 
-            while (!ct.IsCancellationRequested && _port.IsOpen)
+            try
             {
-                try
+                while (!ct.IsCancellationRequested)
                 {
-                    int b = _port.ReadByte();
-                    if (b < 0) { await Task.Delay(5, ct); continue; }
+                    // Expand if nearly full
+                    if (used >= buf.Length - 512)
+                    {
+                        var bigger = ArrayPool<byte>.Shared.Rent(buf.Length * 2);
+                        Buffer.BlockCopy(buf, 0, bigger, 0, used);
+                        ArrayPool<byte>.Shared.Return(buf);
+                        buf = bigger;
+                    }
 
-                    if (b == (byte)'\n') // simplistic: line-based
+                    int nRead;
+                    try
                     {
-                        var frame = buffer.ToArray();
-                        buffer.Clear();
-                        FrameReceived?.Invoke(this, frame);
+                        // ReadAsync returns as soon as some bytes arrive or timeout happens
+                        nRead = await _port.ReadAsync(buf, used, buf.Length - used, ct)
+                                           .ConfigureAwait(false);
                     }
-                    else
+                    catch (TimeoutException)
                     {
-                        buffer.Add((byte)b);
-                        if (buffer.Count > 4096) buffer.Clear(); // guard
+                        // harmless; loop continues
+                        continue;
                     }
+
+                    if (nRead <= 0) continue;
+                    used += nRead;
+
+                    // Scan for LF within [0..used)
+                    int searchStart = 0;
+                    for (int i = 0; i < used; i++)
+                    {
+                        if (buf[i] == (byte)'\n')
+                        {
+                            int lineEndExclusive = i; // excludes LF
+                            int lineLen = lineEndExclusive - searchStart;
+
+                            if (lineLen > 0)
+                            {
+                                // Trim trailing CR if present
+                                if (buf[searchStart + lineLen - 1] == (byte)'\r') lineLen--;
+
+                                if (lineLen > 0)
+                                {
+                                    // Raise the slice
+                                    var line = new byte[lineLen];
+                                    Buffer.BlockCopy(buf, searchStart, line, 0, lineLen);
+                                    FrameReceived?.Invoke(this, line);
+                                }
+                            }
+
+                            searchStart = i + 1; // next fragment starts after LF
+                        }
+                    }
+
+                    // Compact leftover (partial) data to start of buffer
+                    int remaining = used - searchStart;
+                    if (remaining > 0)
+                        Buffer.BlockCopy(buf, searchStart, buf, 0, remaining);
+                    used = remaining;
                 }
-                catch (TimeoutException) { /* normal */ }
-                catch (OperationCanceledException) { }
-                catch
-                {
-                    await Task.Delay(10, ct);
-                }
+            }
+            catch (OperationCanceledException) { /* closing */ }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"Serial RX error: {ex}");
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(buf);
             }
         }
 
         public async Task CloseAsync()
         {
-            try { _tx.Writer.TryComplete(); } catch { }
-            if (_writerLoop is not null) await _writerLoop;
-
             try { _cts?.Cancel(); } catch { }
-            if (_readerLoop is not null) await _readerLoop;
-
-            _port.Close();
+            if (_readerLoop is not null)
+            {
+                try { await _readerLoop.ConfigureAwait(false); } catch { }
+                _readerLoop = null;
+            }
+            try { _port.Close(); } catch { }
+            _cts?.Dispose(); _cts = null;
         }
 
         public async ValueTask DisposeAsync()

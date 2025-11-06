@@ -34,7 +34,6 @@ namespace Flower.App.ViewModels
 
         // Commands
         ReactiveCommand<Unit, Unit> RefreshPortsCommand { get; }
-        ReactiveCommand<Unit, Unit> LoadCommand { get; }
         ReactiveCommand<Unit, Unit> SaveCommand { get; }
         ReactiveCommand<Unit, Unit> AddCommand { get; }
         ReactiveCommand<Unit, Unit> UpdateCommand { get; }

@@ -21,20 +21,6 @@ namespace Flower.Infrastructure.Protocol
             public byte[]? Payload { get; set; }
         }
 
-        public byte[] Encode(ProtocolEnvelope env)
-        {
-            var wire = new Wire
-            {
-                CorrelationId = env.CorrelationId,
-                FlowerId = env.FlowerId,
-                CommandId = env.CommandId,
-                Type = env.Type,
-                Payload = env.Payload.ToArray()
-            };
-            var json = JsonSerializer.Serialize(wire);
-            return Encoding.UTF8.GetBytes(json + "\n");
-        }
-
         public bool TryDecode(ReadOnlySpan<byte> frame, out ProtocolEnvelope env)
         {
             try
@@ -47,7 +33,7 @@ namespace Flower.Infrastructure.Protocol
                     wire.CorrelationId,
                     wire.FlowerId,
                     wire.CommandId,
-                    (wire.Payload ?? Array.Empty<byte>()),
+                    new List<byte[]> { wire.Payload ?? Array.Empty<byte>() },
                     wire.Type);
                 return true;
             }

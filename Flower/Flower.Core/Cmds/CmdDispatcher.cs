@@ -51,13 +51,29 @@ namespace Flower.Core.Cmds
 
         private async Task WorkerLoop((string BusId, int FlowerId) key, Channel<CommandWork> ch)
         {
-            var protocol = _buses.GetProtocol(key.BusId);
-
             await foreach (var work in ch.Reader.ReadAllAsync())
             {
+                // ---- CHECK BUS CONNECTION FIRST ----
+                IProtocolClient? protocol = null;
+                try
+                {
+                    protocol = _buses.GetProtocol(key.BusId); // throws if not present / not connected
+                }
+                catch
+                {
+                    work.Tcs.TrySetResult(CommandOutcome.BusNotConnected);
+                    continue;
+                }
+                if (protocol is null)
+                {
+                    work.Tcs.TrySetResult(CommandOutcome.BusNotConnected);
+                    continue;
+                }
+                // ------------------------------------
+
                 // ---- HARD GATE: don't run on degraded/disconnected ----
                 var fu = await _flowers.GetAsync(key.FlowerId);
-                if (fu is null || fu.ConnectionStatus is ConnectionStatus.Degraded or ConnectionStatus.Disconnected)
+                if ((fu is null || fu.ConnectionStatus is ConnectionStatus.Degraded or ConnectionStatus.Disconnected) && work.Req.CommandId != "ping")
                 {
                     work.Tcs.TrySetResult(CommandOutcome.SkippedNotConnected);
                     continue;
@@ -68,6 +84,7 @@ namespace Flower.Core.Cmds
                     work.Tcs.TrySetResult(CommandOutcome.SkippedNoOp);
                     continue;
                 }
+
                 // -------------------------------------------------------
 
                 var r = work.Req;
@@ -78,7 +95,7 @@ namespace Flower.Core.Cmds
                     var corr = Guid.NewGuid();
                     var env = new ProtocolEnvelope(
                         corr, r.FlowerId, r.CommandId,
-                        BuildPayload(r.Args), ProtocolMessageType.Command);
+                        r.Frames, ProtocolMessageType.Command);
 
                     var ack = await protocol.SendAndWaitAckAsync(env, r.AckTimeout);
                     outcome = ack.Type == ProtocolMessageType.Ack ? CommandOutcome.Acked : CommandOutcome.Nacked;
@@ -87,20 +104,51 @@ namespace Flower.Core.Cmds
                 catch { outcome = CommandOutcome.Timeout; }
 
                 // State transitions
+                // State transitions – keep the unit's ConnectionStatus accurate for all outcomes
                 switch (outcome)
                 {
                     case CommandOutcome.Acked:
-                        if (r.StateOnAck != null) await _state.ApplyAsync(r.FlowerId, r.StateOnAck);
-                        else await _state.TouchConnectionAsync(r.FlowerId, ConnectionStatus.Connected);
+                        // Command succeeded → mark Connected (and apply any richer state change if provided)
+                        if (r.StateOnAck is not null)
+                            await _state.ApplyAsync(r.FlowerId, r.StateOnAck);
+                        else
+                            await _state.TouchConnectionAsync(r.FlowerId, ConnectionStatus.Connected);
                         break;
+
                     case CommandOutcome.Nacked:
+                        // Device replied NACK → it’s reachable but unhappy → Degraded
                         await _state.TouchConnectionAsync(r.FlowerId, ConnectionStatus.Degraded);
                         break;
+
                     case CommandOutcome.Timeout:
-                        if (r.StateOnTimeout != null) await _state.ApplyAsync(r.FlowerId, r.StateOnTimeout);
-                        else await _state.TouchConnectionAsync(r.FlowerId, ConnectionStatus.Degraded);
+                        // No reply in time → treat as Degraded unless caller provided custom transition
+                        if (r.StateOnTimeout is not null)
+                            await _state.ApplyAsync(r.FlowerId, r.StateOnTimeout);
+                        else
+                            await _state.TouchConnectionAsync(r.FlowerId, ConnectionStatus.Degraded);
+                        break;
+
+                    case CommandOutcome.BusNotConnected:
+                        // Bus/port not open → device effectively Disconnected
+                        await _state.TouchConnectionAsync(r.FlowerId, ConnectionStatus.Disconnected);
+                        break;
+
+                    case CommandOutcome.SkippedNotConnected:
+                        // We skipped because unit was already not connected → keep it Disconnected
+                        await _state.TouchConnectionAsync(r.FlowerId, ConnectionStatus.Disconnected);
+                        break;
+
+                    case CommandOutcome.SkippedNoOp:
+                        // No-op (e.g., already in desired state) → assume link is fine
+                        await _state.TouchConnectionAsync(r.FlowerId, ConnectionStatus.Connected);
+                        break;
+
+                    default:
+                        // Any unexpected case → be conservative
+                        await _state.TouchConnectionAsync(r.FlowerId, ConnectionStatus.Degraded);
                         break;
                 }
+
 
                 work.Tcs.TrySetResult(outcome);
             }
@@ -108,7 +156,6 @@ namespace Flower.Core.Cmds
 
         private static ReadOnlyMemory<byte> BuildPayload(IReadOnlyDictionary<string, object?> args)
         {
-            // map args to bytes; you already do this in each command or codec
             return ReadOnlyMemory<byte>.Empty;
         }
 

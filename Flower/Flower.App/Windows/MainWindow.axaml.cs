@@ -116,7 +116,6 @@ namespace Flower.App.Windows
             vm.AssignBusesInteraction.RegisterHandler(async ctx =>
             {
                 var selectedFlowers = ctx.Input; // IReadOnlyList<FlowerUnit>
-                await _busCfg.LoadAsync();
                 var busIds = _busCfg.Buses.Select(b => b.BusId).ToList();
 
                 var assignVm = new AssignBusViewModel(busIds, selectedFlowers.Count);

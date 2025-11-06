@@ -13,8 +13,10 @@ namespace Flower.Core.Records
         string CommandId,
         IReadOnlyDictionary<string, object?> Args,
         TimeSpan AckTimeout,
+        IReadOnlyList<byte[]> Frames,
         Func<FlowerUnit, FlowerUnit>? StateOnAck,         // expected delta
         Func<FlowerUnit, FlowerUnit>? StateOnTimeout ,     // degrade, etc.
         Func<FlowerUnit, bool>? ShouldSkip = null
+
     );
 }
