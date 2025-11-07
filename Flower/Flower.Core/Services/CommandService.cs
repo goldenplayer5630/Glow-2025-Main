@@ -29,7 +29,7 @@ namespace Flower.Core.Services
                 flowerUnit,
                 commandId,
                 args?.ToDictionary(kv => kv.Key, kv => (object?)kv.Value) ?? null,
-                ackTimeout: TimeSpan.FromMilliseconds(120) // you can override per-call here if you like
+                ackTimeout: TimeSpan.FromMilliseconds(400) // you can override per-call here if you like
             );
 
             // Hand off to dispatcher

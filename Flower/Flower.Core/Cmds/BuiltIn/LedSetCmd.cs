@@ -4,6 +4,7 @@ using System.Text;
 using Flower.Core.Abstractions.Commands;
 using Flower.Core.Enums;
 using Flower.Core.Models;
+using Flower.Core.Utilities;
 
 namespace Flower.Core.Cmds.BuiltIn
 {
@@ -27,11 +28,17 @@ namespace Flower.Core.Cmds.BuiltIn
 
         public void ValidateArgs(FlowerCategory category, IReadOnlyDictionary<string, object?> args)
         {
+            if (args is null) throw new ArgumentNullException(nameof(args));
             if (!args.ContainsKey("intensity"))
                 throw new ArgumentException("Missing required argument: intensity");
-            if (args["intensity"] is not int intensity || intensity < 0 || intensity > 255)
-                throw new ArgumentException("Argument 'intensity' must be an integer between 0 and 255.");
+
+            if (!IntParser.TryGetInt(args["intensity"], out var intensity))
+                throw new ArgumentException("Argument 'intensity' must be an integer (0..255).");
+
+            if (intensity < 0 || intensity > 255)
+                throw new ArgumentOutOfRangeException(nameof(intensity), "Intensity must be between 0 and 255 (inclusive).");
         }
+
 
         public IReadOnlyList<byte[]> BuildPayload(
             int flowerId,

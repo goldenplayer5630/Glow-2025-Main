@@ -1,4 +1,5 @@
 ﻿using Flower.Core.Enums;
+using Newtonsoft.Json;
 using ReactiveUI;
 using System;
 using System.Collections.Generic;
@@ -9,6 +10,7 @@ using System.Threading.Tasks;
 
 namespace Flower.Core.Models
 {
+    [JsonObject(MemberSerialization.OptOut)]
     public class FlowerUnit : ReactiveObject // ⬅️ inherit ReactiveObject
     {
         // Minimal typical fields
@@ -35,18 +37,21 @@ namespace Flower.Core.Models
             set => this.RaiseAndSetIfChanged(ref _category, value);
         }
 
+        [JsonIgnore]
         public ConnectionStatus ConnectionStatus
         {
             get => _connectionStatus;
             set => this.RaiseAndSetIfChanged(ref _connectionStatus, value);
         }
 
+        [JsonIgnore]
         public FlowerStatus FlowerStatus
         {
             get => _flowerStatus;
             set => this.RaiseAndSetIfChanged(ref _flowerStatus, value);
         }
 
+        [JsonIgnore]
         public int CurrentBrightness
         {
             get => _currentBrightness;

@@ -1,14 +1,9 @@
 ﻿using Flower.Core.Enums;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace Flower.Core.Models
 {
-    // Converted record to a regular model class with init-only properties and constructor.
+    [JsonObject(MemberSerialization.OptOut)]
     public sealed class BusConfig
     {
         public string BusId { get; set; }
