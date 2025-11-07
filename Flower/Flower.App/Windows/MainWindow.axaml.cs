@@ -16,6 +16,7 @@ namespace Flower.App.Windows
         private readonly Func<AddFlowerWindow> _addOrUpdateFlowerWindowFactory;
         private readonly Func<ManageBusesWindow> _manageBusesWindowFactory;
         private readonly Func<SendCommandToFlowerWindow> _sendCommandToFlowerWindowFactory;
+        private readonly Func<LoadFlowersWindow> _loadFlowersWindowFactory = () => new LoadFlowersWindow();
         private readonly IBusConfigService _busCfg;
 
         public MainWindow()
@@ -32,6 +33,7 @@ namespace Flower.App.Windows
             Func<AddFlowerWindow> addFlowerWindowFactory,
             Func<ManageBusesWindow> manageBusesWindowFactory,
             Func<SendCommandToFlowerWindow> sendCommandToFlowerWindowFactory,
+            Func<LoadFlowersWindow> loadFlowersWindowFactory,
             IBusConfigService busCfg
         ) : this()
         {
@@ -40,6 +42,7 @@ namespace Flower.App.Windows
             _addOrUpdateFlowerWindowFactory = addFlowerWindowFactory;
             _manageBusesWindowFactory = manageBusesWindowFactory;
             _sendCommandToFlowerWindowFactory = sendCommandToFlowerWindowFactory;
+            _loadFlowersWindowFactory = loadFlowersWindowFactory;
             _busCfg = busCfg;
 
             HookInteractions(vm);
@@ -138,6 +141,34 @@ namespace Flower.App.Windows
                     await vm2.InitAsync(flower);
 
                 var result = await win.ShowDialog<string?>(this);
+                ctx.SetOutput(result);
+            });
+
+
+            vm.LoadShowInteraction.RegisterHandler(async ctx =>
+            {
+                var win = _loadFlowersWindowFactory();
+
+                if (win.DataContext is ILoadFlowerViewModel lvm)
+                {
+                    // Option A: let the VM use its own default
+                    await lvm.InitAsync();
+
+                    // Option B: enforce the showprojects folder explicitly
+                    // await lvm.InitAsync(ShowProjectStore.DefaultFolder);
+                }
+
+                if (win.DataContext is LoadFlowerViewModel strongVm)
+                {
+                    void Handler(object? _, ShowProject? project)
+                    {
+                        strongVm.CloseRequested -= Handler;
+                        win.Close(project);
+                    }
+                    strongVm.CloseRequested += Handler;
+                }
+
+                var result = await win.ShowDialog<ShowProject?>(this);
                 ctx.SetOutput(result);
             });
         }

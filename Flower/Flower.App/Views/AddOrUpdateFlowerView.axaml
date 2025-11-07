@@ -20,6 +20,12 @@
       <Setter Property="VerticalContentAlignment" Value="Center"/>
     </Style>
 
+      <Style Selector="StackPanel.form-cell">
+          <Setter Property="Orientation" Value="Vertical"/>
+          <Setter Property="Spacing" Value="6"/>
+          <Setter Property="Margin" Value="0,0,0,12"/>
+        </Style>
+
     <!-- ComboBox -->
     <Style Selector="ComboBox">
       <Setter Property="FontSize" Value="18"/>
@@ -59,40 +65,70 @@
     </Style>
   </UserControl.Styles>
 
-  <!-- Simple form: Id + Category + validation summary -->
-  <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*"
-        Margin="16">
+<!-- Simple, compact 2-column form -->
+<Grid RowDefinitions="Auto,*,Auto,*,Auto" ColumnDefinitions="*,*"
+      Margin="16">
 
-    <!-- Id -->
-    <StackPanel Classes="form-row" Grid.Row="0">
-      <TextBlock Classes="header" Text="Flower Id"/>
-
-      <!-- Integer spinner: 1..999 -->
+  <!-- Row 0: Id | Priority -->
+  <StackPanel Classes="form-cell" Grid.Row="0" Grid.Column="0" Margin="16,0,0,0">
+    <TextBlock Classes="header" Text="Flower Id"/>
     <ac:NumericUpDown
         Value="{Binding IdValue, Mode=TwoWay}"
         Minimum="1"
         Maximum="999"
         Increment="1"
-        FormatString="0" />
+        FormatString="0"
+        MinWidth="220"/>
+    <TextBlock Foreground="Tomato"
+               Text="{Binding IdError}"
+               IsVisible="{Binding HasIdError}"/>
+  </StackPanel>
 
+  <StackPanel Classes="form-cell" Grid.Row="0" Grid.Column="2" Margin="16,0,0,0">
+    <TextBlock Classes="header" Text="Priority"/>
+    <ac:NumericUpDown
+        Value="{Binding PriorityValue, Mode=TwoWay}"
+        Minimum="0"
+        Maximum="999"
+        Increment="1"
+        FormatString="0"
+        MinWidth="220"/>
+    <TextBlock Foreground="Tomato"
+               Text="{Binding PriorityError}"
+               IsVisible="{Binding HasPriorityError}"/>
+  </StackPanel>
 
-      <TextBlock Foreground="Tomato"
-                 Text="{Binding IdError}"
-                 IsVisible="{Binding HasIdError}"/>
-    </StackPanel>
+  <!-- Row 1: Category | Manual status override -->
+  <StackPanel Classes="form-cell" Grid.Row="1" Grid.Column="0" Margin="16,0,0,0">
+    <TextBlock Classes="header" Text="Category"/>
+    <ComboBox ItemsSource="{Binding CategoryItems}"
+              SelectedItem="{Binding SelectedCategory, Mode=TwoWay}"/>
+  </StackPanel>
 
+  <StackPanel Classes="form-cell" Grid.Row="1" Grid.Column="2" Margin="16,0,0,0">
+    <TextBlock Classes="header" Text="Manual status override"/>
+        <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
+          <ac:LayoutTransformControl>
+            <ac:LayoutTransformControl.LayoutTransform>
+              <ScaleTransform ScaleX="1.35" ScaleY="1.35"/>
+            </ac:LayoutTransformControl.LayoutTransform>
+            <ToggleSwitch
+              IsChecked="{Binding UseManualStatusOverride, Mode=TwoWay}"
+              Margin="0,0,8,0"/>
+          </ac:LayoutTransformControl>
 
-    <!-- Category -->
-    <StackPanel Classes="form-row" Grid.Row="1">
-      <TextBlock Classes="header" Text="Category"/>
-      <ComboBox ItemsSource="{Binding CategoryItems}"
-                SelectedItem="{Binding SelectedCategory, Mode=TwoWay}"/>
-    </StackPanel>
+          <ComboBox
+            ItemsSource="{Binding StatusItems}"
+            SelectedItem="{Binding SelectedStatus, Mode=TwoWay}"
+            IsEnabled="{Binding UseManualStatusOverride}"
+            MinWidth="180"/>
+        </StackPanel>
+  </StackPanel>
 
-    <!-- Validation summary (optional) -->
-    <TextBlock Grid.Row="2"
-               Foreground="Tomato"
-               Text="{Binding FormError}"
-               IsVisible="{Binding HasFormError}"/>
-  </Grid>
+  <!-- Row 2: Validation summary spans both columns -->
+  <TextBlock Grid.Row="2" Grid.ColumnSpan="2"
+             Foreground="Tomato"
+             Text="{Binding FormError}"
+             IsVisible="{Binding HasFormError}"/>
+</Grid>
 </UserControl>

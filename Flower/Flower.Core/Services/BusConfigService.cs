@@ -65,31 +65,32 @@ namespace Bus.Core.Services
             finally { _gate.Release(); }
         }
 
-        public async Task AddAsync(BusConfig Bus)
+        public async Task AddAsync(BusConfig bus)
         {
             await _gate.WaitAsync().ConfigureAwait(false);
             try
             {
-                var id = Bus.BusId;
+                var id = bus.BusId;
                 if (_buses.Any(f => f.BusId == id))
                     throw new InvalidOperationException($"Bus with Id {id} already exists.");
 
-                _buses.Add(Bus);
+                _buses.Add(bus);
             }
             finally { _gate.Release(); }
         }
 
-        public async Task<bool> UpdateAsync(BusConfig Bus)
+        public async Task<bool> UpdateAsync(BusConfig bus)
         {
             await _gate.WaitAsync().ConfigureAwait(false);
+
             try
             {
-                var id = Bus.BusId;
+                var id = bus.BusId;
                 for (int i = 0; i < _buses.Count; i++)
                 {
                     if (_buses[i].BusId == id)
                     {
-                        _buses[i] = Bus; // replace
+                        _buses[i] = bus; // replace
                         return true;
                     }
                 }

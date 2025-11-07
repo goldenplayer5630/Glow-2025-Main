@@ -11,16 +11,16 @@ namespace Flower.Core.Services
     {
         private readonly IFlowerService _flowerService;
         private readonly IBusConfigService _busConfigService;
-        private readonly IShowPlayerService _showPlayerService;
+        private readonly IShowProjectService _showProjectService;
 
         public LoadCoreDataStartupTask(
             IFlowerService flowerService,
             IBusConfigService busConfigService,
-            IShowPlayerService showPlayerService)
+            IShowProjectService showProjectService)
         {
             _flowerService = flowerService;
             _busConfigService = busConfigService;
-            _showPlayerService = showPlayerService;
+            _showProjectService = showProjectService;
         }
 
         public async Task ExecuteAsync(CancellationToken ct = default)
@@ -28,7 +28,7 @@ namespace Flower.Core.Services
             // These are idempotent: calling again is safe
             await _busConfigService.LoadAsync();
             await _flowerService.LoadAsync();
-            // await _showPlayerService.LoadAsync().ConfigureAwait(false); not implemented yet
+            await _showProjectService.LoadAsync();
         }
     }
 

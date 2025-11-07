@@ -1,4 +1,6 @@
-﻿using Flower.Core.Abstractions.Commands;
+﻿// Flower.App.ViewModels/SendCommandToFlowerViewModel.cs
+using Flower.Core.Abstractions.Commands;
+using Flower.Core.Abstractions.Services;
 using Flower.Core.Models;
 using Flower.Core.Records;
 using ReactiveUI;
@@ -8,7 +10,6 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reactive.Disposables;
 using System.Text.Json;
-using System.Threading;
 using System.Threading.Tasks;
 
 namespace Flower.App.ViewModels
@@ -17,10 +18,12 @@ namespace Flower.App.ViewModels
     {
         private readonly ICommandService _commandService;
         private readonly ICommandRegistry _registry;
+        private readonly IUiLogService? _uiLog;
         private readonly CompositeDisposable _argSubs = new();
 
         private FlowerUnit? _target;
         private bool _isBusy;
+        private bool _closeAfterSend;                    // NEW
         private CommandOption? _selectedCommand;
         private string _argsJson = "{}";
 
@@ -29,8 +32,13 @@ namespace Flower.App.ViewModels
         public string HeaderText { get; private set; } = "Send command to selected flower";
         public IReadOnlyList<CommandOption> CommandOptions { get; }
 
-        // Auto UI for arguments
         public ObservableCollection<ArgEntry> ArgEntries { get; } = new();
+
+        public bool CloseAfterSend                              // NEW (bind to a checkbox in XAML)
+        {
+            get => _closeAfterSend;
+            set => this.RaiseAndSetIfChanged(ref _closeAfterSend, value);
+        }
 
         public CommandOption? SelectedCommand
         {
@@ -38,12 +46,11 @@ namespace Flower.App.ViewModels
             set
             {
                 this.RaiseAndSetIfChanged(ref _selectedCommand, value);
-                LoadArgsForSelected();          // <-- refresh numeric fields when command changes
+                LoadArgsForSelected();
                 this.RaisePropertyChanged(nameof(CanConfirm));
             }
         }
 
-        // Optional: still show JSON (kept in sync)
         public string ArgsJson
         {
             get => _argsJson;
@@ -59,12 +66,16 @@ namespace Flower.App.ViewModels
         public bool CanConfirm =>
             !IsBusy &&
             _target is not null &&
-            SelectedCommand is not null; // numeric fields are always valid numbers
+            SelectedCommand is not null;
 
-        public SendCommandToFlowerViewModel(ICommandService commandService, ICommandRegistry registry)
+        public SendCommandToFlowerViewModel(
+            ICommandService commandService,
+            ICommandRegistry registry,
+            IUiLogService? uiLog = null)             // NEW optional logger
         {
             _commandService = commandService ?? throw new ArgumentNullException(nameof(commandService));
             _registry = registry ?? throw new ArgumentNullException(nameof(registry));
+            _uiLog = uiLog;
 
             var all = _registry.AllCommands.ToList();
             CommandOptions = all
@@ -74,7 +85,6 @@ namespace Flower.App.ViewModels
 
             SelectedCommand = CommandOptions.FirstOrDefault();
 
-            // keep JSON preview in sync when numbers change
             ArgEntries.CollectionChanged += (_, __) => RebuildArgsJson();
         }
 
@@ -91,19 +101,37 @@ namespace Flower.App.ViewModels
         {
             if (!CanConfirm) return;
             IsBusy = true;
+
+            var ts = DateTimeOffset.Now;
+            var commandId = SelectedCommand!.Id;
+            var args = BuildArgsDictionary();
+
             try
             {
-                var args = BuildArgsDictionary(); // from ArgEntries
-                var commandId = SelectedCommand!.Id;
+                // No ConfigureAwait(false) – keep context friendly for UI signaling
+                await _commandService.SendCommandAsync(commandId, _target!, args);
 
-                await _commandService.SendCommandAsync(commandId, _target!, args).ConfigureAwait(false);
-                CloseRequested?.Invoke(this, commandId);
+                _uiLog?.Info(
+                    $"Sent {commandId} to flower #{_target!.Id} args={ArgsJson}");
+
+                if (CloseAfterSend)
+                    CloseRequested?.Invoke(this, commandId);  // window will close
+                // else: keep window open for rapid subsequent sends
             }
-            catch
+            catch (Exception ex)
             {
-                CloseRequested?.Invoke(this, null);
+                _uiLog?.Error(
+                    $"Failed to sent {commandId} to flower #{_target?.Id} args={ArgsJson}",
+                    ex);
+
+                // keep dialog open to let user adjust + re-send
+                // but still allow consumers to close if they want:
+                // CloseRequested?.Invoke(this, null);
             }
-            finally { IsBusy = false; }
+            finally
+            {
+                IsBusy = false;
+            }
         }
 
         public void Cancel() => CloseRequested?.Invoke(this, null);
@@ -111,7 +139,6 @@ namespace Flower.App.ViewModels
         // -------- internals --------
         private void LoadArgsForSelected()
         {
-            // Clear previous arg subscriptions
             _argSubs.Clear();
             ArgEntries.Clear();
 
@@ -132,26 +159,19 @@ namespace Flower.App.ViewModels
                 var entry = new ArgEntry(name, v);
                 ArgEntries.Add(entry);
 
-                // ⬇ subscribe correctly (Changed is IObservable)
                 entry.WhenAnyValue(x => x.Value)
                     .Subscribe(_ => RebuildArgsJson())
                     .DisposeWith(_argSubs);
             }
 
-            // If the collection itself changes later, refresh JSON
-            // (optional) – if you add/remove args dynamically:
-            // ArgEntries.CollectionChanged += (_, __) => RebuildArgsJson();
-
             RebuildArgsJson();
         }
-
-        private void OnArgEntryChanged(object? sender, EventArgs e) => RebuildArgsJson();
 
         private void RebuildArgsJson()
         {
             var dict = ArgEntries.ToDictionary(
                 a => a.Name,
-                a => NumberBox(a.Value) // int if whole, else double
+                a => NumberBox(a.Value)
             );
             ArgsJson = JsonSerializer.Serialize(dict);
         }
@@ -161,8 +181,5 @@ namespace Flower.App.ViewModels
 
         private IReadOnlyDictionary<string, object> BuildArgsDictionary()
             => ArgEntries.ToDictionary(a => a.Name, a => NumberBox(a.Value));
-
-
     }
-
 }

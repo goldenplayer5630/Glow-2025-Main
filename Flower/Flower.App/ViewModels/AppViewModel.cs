@@ -1,5 +1,4 @@
-﻿// Flower.App/ViewModels/AppViewModel.cs
-using Avalonia.Threading;
+﻿using Avalonia.Threading;
 using Flower.App.Views;
 using Flower.Core.Abstractions.Commands;
 using Flower.Core.Abstractions.Services;
@@ -9,7 +8,6 @@ using Flower.Core.Models;
 using Flower.Core.Records;
 using Flower.Core.Services;
 using ReactiveUI;
-using RJCP.IO.Ports;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -30,6 +28,7 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
     private readonly IShowPlayerService _player;
     private readonly IShowProjectStore _showStore;
     private readonly IFlowerService _flowerService;
+    private readonly IUiLogService _uiLog;
 
     private ShowProject? _project;
 
@@ -38,12 +37,12 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
     private readonly List<IDisposable> _itemStatusSubs = new();   // for connection-status watchers (fleet states)
     private IDisposable? _selectedFlowerSub;
     private readonly ObservableAsPropertyHelper<bool> _hasFlowers;
-    private bool _canAssignBuses = true;
 
-    // AssignSelected wiring
-    private readonly List<IDisposable> _assignSubs = new();       // for AssignSelected watchers
-    private readonly ObservableAsPropertyHelper<bool>? _anySelectedForAssign;
-    private readonly List<IDisposable> _assignSelectedSubs = new();
+    // NEW: OAPH for CanAssignBuses (replaces manual backing field)
+    private readonly ObservableAsPropertyHelper<bool> _canAssignBusesOaph;
+
+    // For internal per-item AssignSelected watchers built by anySelected pipeline
+    private readonly List<IDisposable> _assignSubs = new();
 
     private bool _disposed;
 
@@ -122,14 +121,13 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
 
     // ========= Visibility Helpers: Fleet =========
     public bool HasFlowers => _hasFlowers.Value;
+
     public bool CanConnectAll => HasFlowers && Flowers.Any(f => f.ConnectionStatus != ConnectionStatus.Connected);
     public bool CanDisconnectAll => HasFlowers && Flowers.All(f => f.ConnectionStatus == ConnectionStatus.Connected);
     public bool DisabledConnectAll => !HasFlowers || (!CanConnectAll && !CanDisconnectAll);
-    public bool CanAssignBuses
-    {
-        get => _canAssignBuses;
-        private set => this.RaiseAndSetIfChanged(ref _canAssignBuses, value);
-    }
+
+    // NEW: read-only property backed by OAPH
+    public bool CanAssignBuses => _canAssignBusesOaph.Value;
 
     // ========= Commands =========
     public ReactiveCommand<Unit, Unit> LoadShowCommand { get; }
@@ -159,19 +157,26 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
     public Interaction<FlowerUnit, FlowerUnit?> UpdateFlowerInteraction { get; } = new();
     public Interaction<IReadOnlyList<FlowerUnit>, string?> AssignBusesInteraction { get; } = new();
     public Interaction<FlowerUnit, string?> SendCommandToFlowerInteraction { get; } = new();
+    public Interaction<Unit, ShowProject?> LoadShowInteraction { get; } = new();
 
     // ========= Ctor =========
     public AppViewModel(
         ICommandService commandService,
         IShowPlayerService player,
         IShowProjectStore showStore,
-        IFlowerService flowerService)
+        IFlowerService flowerService,
+        IUiLogService uiLog)
     {
         _statusText = "Ready.";
         _commandService = commandService;
         _player = player;
         _showStore = showStore;
         _flowerService = flowerService;
+        _uiLog = uiLog;
+
+        // Subscribe log events
+        uiLog.InfoPublished += OnUiLogInfo;
+        uiLog.ErrorPublished += OnUiLogError;
 
         // HasFlowers observable
         var hasFlowersObs =
@@ -184,7 +189,7 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
             .Select(count => count > 0)
             .ObserveOn(RxApp.MainThreadScheduler);
 
-        _hasFlowers = hasFlowersObs.ToProperty(this, vm => vm.HasFlowers, scheduler: RxApp.MainThreadScheduler);
+        _hasFlowers = hasFlowersObs.ToProperty(this, vm => vm.HasFlowers, initialValue: Flowers.Count > 0, scheduler: RxApp.MainThreadScheduler);
 
         // === AnySelected (reacts to collection and per-item AssignSelected changes) ===
         var collectionChanges =
@@ -226,8 +231,9 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
                 .DistinctUntilChanged()
                 .ObserveOn(RxApp.MainThreadScheduler);
 
-        _anySelectedForAssign = anySelectedObs
-            .ToProperty(this, vm => vm.CanAssignBuses, scheduler: RxApp.MainThreadScheduler);
+        // Bind to read-only property (no manual setter anywhere)
+        _canAssignBusesOaph = anySelectedObs
+            .ToProperty(this, vm => vm.CanAssignBuses, initialValue: Flowers.Any(f => f.AssignSelected), scheduler: RxApp.MainThreadScheduler);
 
         AssignBusesCommand = ReactiveCommand.CreateFromTask(AssignBusesAsync, anySelectedObs);
 
@@ -262,15 +268,17 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
                 return;
             }
 
+            await AppendAsync($"Opening send-command dialog for flower #{flower.Id}...\n");
+
             var commandResult = await SendCommandToFlowerInteraction.Handle(flower);
 
             if (string.IsNullOrWhiteSpace(commandResult))
             {
-                await AppendAsync($"Send command to flower Id={flower.Id} was canceled.\n");
+                await AppendAsync("Send canceled.\n");
                 return;
             }
 
-            await AppendAsync($"Send command to flower Id={flower.Id}: {commandResult}\n");
+            await AppendAsync($"Dialog closed after sending '{commandResult}'.\n");
         });
 
         AddFlowerCommand = ReactiveCommand.CreateFromTask(AddFlowerAsync);
@@ -295,13 +303,7 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
         });
 
         WireFleetObservers();          // initial wiring to current Flowers collection
-        RecomputeCanAssignBuses();     // compute initial state for the Assign button
         RaiseFleetStatesChanged();
-    }
-
-    private void RecomputeCanAssignBuses()
-    {
-        CanAssignBuses = Flowers.Any(f => f.AssignSelected);
     }
 
     private async Task AssignBusesAsync()
@@ -328,14 +330,14 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
 
     private async Task LoadShowAsync()
     {
-        var path = Path.Combine(AppContext.BaseDirectory, "opening-loop.json");
-        if (!File.Exists(path))
+        var result = await LoadShowInteraction.Handle(Unit.Default);
+        if (result is null)
         {
-            await AppendAsync("No show file found (opening-loop.json).\n");
+            await AppendAsync("Load show cancelled.\n");
             return;
         }
 
-        _project = await _showStore.LoadAsync(path);
+        _project = result;
         StatusText = $"Loaded show: {_project.Title}";
         await AppendAsync($"Loaded show '{_project.Title}'\n");
     }
@@ -388,32 +390,31 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
         else
             await AppendAsync($"Connecting flower Id={flower.Id} on {flower.BusId}...\n");
         try
-            {
-                // ping has no args
-                var args = new Dictionary<string, object>();
+        {
+            // ping has no args
+            var args = new Dictionary<string, object>();
 
-                // This enqueues the command; the dispatcher will set state via PingCmd.StateOnAck()
-                var outcome = await _commandService.SendCommandAsync("ping", flower, args);
+            // This enqueues the command; the dispatcher will set state via PingCmd.StateOnAck()
+            var outcome = await _commandService.SendCommandAsync("ping", flower, args);
 
-                if (outcome != CommandOutcome.Acked)
-                    throw new InvalidOperationException($"Ping command outcome: {outcome}");
+            if (outcome != CommandOutcome.Acked)
+                throw new InvalidOperationException($"Ping command outcome: {outcome}");
 
-                RaiseConnectStatesChanged();
-                await AppendAsync($"Ping OK → flower Id={flower.Id} is {flower.ConnectionStatus}.\n");
-            }
-            catch (Exception ex)
-            {
-                // Mark degraded on failure (mirrors CommandService on-timeout behavior)
-                flower.ConnectionStatus = ConnectionStatus.Degraded;
-                await _flowerService.UpdateAsync(flower);
-                await SaveFlowersAsync();
+            RaiseConnectStatesChanged();
+            await AppendAsync($"Ping OK → flower Id={flower.Id} is {flower.ConnectionStatus}.\n");
+        }
+        catch (Exception ex)
+        {
+            // Mark degraded on failure (mirrors CommandService on-timeout behavior)
+            flower.ConnectionStatus = ConnectionStatus.Degraded;
+            await _flowerService.UpdateAsync(flower);
+            await SaveFlowersAsync();
 
-                RaiseConnectStatesChanged();
-                await AppendAsync($"Ping FAILED for flower Id={flower.Id}\n");
-                await AppendAsync($"Exception: {ex.Message}\n");
-            }
+            RaiseConnectStatesChanged();
+            await AppendAsync($"Ping FAILED for flower Id={flower.Id}\n");
+            await AppendAsync($"Exception: {ex.Message}\n");
+        }
     }
-
 
     private async Task DisconnectFlowerAsync()
     {
@@ -544,7 +545,7 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
         this.RaisePropertyChanged(nameof(DisabledConnectAll));
     }
 
-    private Task AppendAsync(string text) =>
+    public Task AppendAsync(string text) =>
         Dispatcher.UIThread.InvokeAsync(() => { MonitorText += text; }).GetTask();
 
     // ========= Fleet Observer Wiring =========
@@ -564,42 +565,13 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
                     .Subscribe(_ =>
                     {
                         RewireItemSubscriptions();
-                        WireAssignSelectedObservers(); 
                         RaiseFleetStatesChanged();
-                        RecomputeCanAssignBuses();   
+                        // no manual recompute here; OAPH handles CanAssignBuses
                     });
         }
 
         RewireItemSubscriptions();
         RaiseFleetStatesChanged();
-    }
-
-    private void WireAssignSelectedObservers()
-    {
-        // Clear previous row-level watchers
-        foreach (var d in _assignSelectedSubs) d.Dispose();
-        _assignSelectedSubs.Clear();
-
-        // Re-subscribe to each flower's AssignSelected change
-        foreach (var f in Flowers)
-        {
-            if (f is INotifyPropertyChanged inpc)
-            {
-                var sub =
-                    Observable.FromEvent<PropertyChangedEventHandler, PropertyChangedEventArgs>(
-                            h => (s, e) => h(e),
-                            h => inpc.PropertyChanged += h,
-                            h => inpc.PropertyChanged -= h)
-                        .Where(e => e.PropertyName == nameof(FlowerUnit.AssignSelected))
-                        .ObserveOn(RxApp.MainThreadScheduler)
-                        .Subscribe(_ => RecomputeCanAssignBuses());
-
-                _assignSelectedSubs.Add(sub);
-            }
-        }
-
-        // Recompute once for current state
-        RecomputeCanAssignBuses();
     }
 
     private void RewireItemSubscriptions()
@@ -629,6 +601,17 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
         }
     }
 
+    private async void OnUiLogInfo(string msg)
+    {
+        await AppendAsync(msg.EndsWith("\n") ? msg : msg + "\n");
+    }
+
+    private async void OnUiLogError(string msg, Exception ex)
+    {
+        var line = $"{msg} :: {ex.GetType().Name}: {ex.Message}";
+        await AppendAsync(line.EndsWith("\n") ? line : line + "\n");
+    }
+
     // ========= IDisposable =========
     public void Dispose()
     {
@@ -645,9 +628,6 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
         _assignSubs.Clear();
 
         _hasFlowers?.Dispose();
-        _anySelectedForAssign?.Dispose();
-
-        foreach (var d in _assignSelectedSubs) d.Dispose();
-        _assignSelectedSubs.Clear();
+        _canAssignBusesOaph?.Dispose();
     }
 }

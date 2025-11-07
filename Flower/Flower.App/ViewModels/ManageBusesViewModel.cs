@@ -23,6 +23,7 @@ namespace Flower.App.ViewModels
     {
         private readonly IBusConfigService _busCfg;
         private readonly IBusDirectory _busDir;
+        private readonly IUiLogService? _uiLog;
         private bool _disposed;
 
         public ReadOnlyObservableCollection<BusConfig> Buses => _busCfg.Buses;
@@ -81,10 +82,14 @@ namespace Flower.App.ViewModels
         public ReactiveCommand<Unit, Unit> ConnectAllCommand { get; }
         public ReactiveCommand<Unit, Unit> DisconnectAllCommand { get; }
 
-        public ManageBusesViewModel(IBusConfigService busCfg, IBusDirectory busDir)
+        public ManageBusesViewModel(
+            IBusConfigService busCfg,
+            IBusDirectory busDir,
+            IUiLogService? uiLog = null) // ⬅️ NEW
         {
             _busCfg = busCfg;
             _busDir = busDir;
+            _uiLog = uiLog; // ⬅️ NEW
             _editBaud = 9600;
 
             RefreshPortsCommand = ReactiveCommand.Create(RefreshPorts);
@@ -93,16 +98,18 @@ namespace Flower.App.ViewModels
             {
                 await _busCfg.SaveAsync();
                 Status = $"Saved {Buses.Count} bus config(s).";
+                _uiLog?.Info(Status); // ⬅️ NEW
             });
 
             AddCommand = ReactiveCommand.CreateFromTask(async () =>
             {
                 var err = Validate(EditBusId, EditPort, EditBaud, adding: true);
-                if (err != null) { Status = err; return; }
+                if (err != null) { Status = err; _uiLog?.Error(err, new InvalidOperationException(err)); return; }
 
                 if (Buses.Any(b => string.Equals(b.BusId, EditBusId, StringComparison.OrdinalIgnoreCase)))
                 {
                     Status = $"BusId '{EditBusId}' already exists.";
+                    _uiLog?.Error(Status, new InvalidOperationException(Status));
                     return;
                 }
 
@@ -112,39 +119,45 @@ namespace Flower.App.ViewModels
                 await _busCfg.AddAsync(cfg);
                 await _busCfg.SaveAsync();
                 Status = $"Added {cfg.BusId}.";
+                _uiLog?.Info(Status); // ⬅️ NEW
                 SuggestNextFreeBusId();
             });
 
             UpdateCommand = ReactiveCommand.CreateFromTask(async () =>
             {
                 var selected = Selected;
-                if (selected is null) { Status = "No bus selected."; return; }
+                if (selected is null) { Status = "No bus selected."; _uiLog?.Error(Status, new InvalidOperationException(Status)); return; }
                 var err = Validate(selected.BusId, EditPort ?? selected.Port, EditBaud, adding: false);
-                if (err != null) { Status = err; return; }
+                if (err != null) { Status = err; _uiLog?.Error(err, new InvalidOperationException(err)); return; }
 
                 selected.Port = (EditPort ?? selected.Port)!.Trim();
                 selected.Baud = EditBaud;
 
+                selected.ConnectionStatus = ConnectionStatus.Disconnected;
+
+                await _busDir.DisconnectAsync(selected.BusId).ConfigureAwait(false); // best effort
                 await _busCfg.UpdateAsync(selected);
                 await _busCfg.SaveAsync();
                 Status = $"Updated {selected.BusId}.";
+                _uiLog?.Info(Status); // ⬅️ NEW
             });
 
             DeleteCommand = ReactiveCommand.CreateFromTask(async () =>
             {
                 var selected = Selected;
-                if (selected is null) { Status = "No bus selected."; return; }
+                if (selected is null) { Status = "No bus selected."; _uiLog?.Error(Status, new InvalidOperationException(Status)); return; }
                 await _busDir.DisconnectAsync(selected.BusId).ConfigureAwait(false); // best effort
                 await _busCfg.DeleteAsync(selected.BusId);
                 await _busCfg.SaveAsync();
                 Status = $"Deleted {selected.BusId}.";
+                _uiLog?.Info(Status); // ⬅️ NEW
                 SuggestNextFreeBusId();
             });
 
             ConnectCommand = ReactiveCommand.CreateFromTask(async () =>
             {
                 var selected = Selected;
-                if (selected is null) { Status = "No bus selected."; return; }
+                if (selected is null) { Status = "No bus selected."; _uiLog?.Error(Status, new InvalidOperationException(Status)); return; }
                 try
                 {
                     await _busDir.ConnectAsync(selected);
@@ -152,18 +165,20 @@ namespace Flower.App.ViewModels
                     await _busCfg.UpdateAsync(selected);
                     await _busCfg.SaveAsync();
                     Status = $"Connected {selected.BusId} → {selected.Port} @ {selected.Baud}.";
+                    _uiLog?.Info(Status); // ⬅️ NEW
                 }
                 catch (Exception ex)
                 {
                     selected.ConnectionStatus = ConnectionStatus.Degraded;
                     Status = $"Connect failed: {ex.Message}";
+                    _uiLog?.Error(Status, ex); // ⬅️ NEW
                 }
             });
 
             DisconnectCommand = ReactiveCommand.CreateFromTask(async () =>
             {
                 var selected = Selected;
-                if (selected is null) { Status = "No bus selected."; return; }
+                if (selected is null) { Status = "No bus selected."; _uiLog?.Error(Status, new InvalidOperationException(Status)); return; }
                 try
                 {
                     await _busDir.DisconnectAsync(selected.BusId);
@@ -171,11 +186,13 @@ namespace Flower.App.ViewModels
                     await _busCfg.UpdateAsync(selected);
                     await _busCfg.SaveAsync();
                     Status = $"Disconnected {selected.BusId}.";
+                    _uiLog?.Info(Status); // ⬅️ NEW
                 }
                 catch (Exception ex)
                 {
                     selected.ConnectionStatus = ConnectionStatus.Degraded;
                     Status = $"Disconnect failed: {ex.Message}";
+                    _uiLog?.Error(Status, ex); // ⬅️ NEW
                 }
             });
 
@@ -189,6 +206,7 @@ namespace Flower.App.ViewModels
                 }
                 await _busCfg.SaveAsync();
                 Status = $"Connect all: {ok} ok, {fail} failed.";
+                _uiLog?.Info(Status); // ⬅️ NEW
             });
 
             DisconnectAllCommand = ReactiveCommand.CreateFromTask(async () =>
@@ -200,14 +218,13 @@ namespace Flower.App.ViewModels
                 }
                 await _busCfg.SaveAsync();
                 Status = "Disconnected all busses.";
+                _uiLog?.Info(Status); // ⬅️ NEW
             });
 
-            // Update editors when selecting a row
             this.WhenAnyValue(vm => vm.Selected)
                 .Where(x => x != null)
                 .Subscribe(x =>
                 {
-                    // BusId is immutable once created (prevents accidental re-keying)
                     EditBusId = x!.BusId;
                     EditPort = x.Port;
                     EditBaud = x.Baud;
@@ -237,24 +254,23 @@ namespace Flower.App.ViewModels
         {
             var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-            // 1) RJCP (your version has instance GetPortNames())
+            // RJCP
             try
             {
                 using var sps = new RJCP.IO.Ports.SerialPortStream();
                 foreach (var p in sps.GetPortNames())
                     if (!string.IsNullOrWhiteSpace(p)) set.Add(p.Trim());
             }
-            catch { /* ignore; fall through */ }
+            catch { /* ignore */ }
 
-            // 2) BCL
+            // BCL
             try
             {
                 foreach (var p in System.IO.Ports.SerialPort.GetPortNames())
                     if (!string.IsNullOrWhiteSpace(p)) set.Add(p.Trim());
             }
-            catch { /* ignore; fall through */ }
+            catch { /* ignore */ }
 
-            // 3) Unix: explicit /dev scan for stability & completeness
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
             {
                 foreach (var dev in EnumerateUnixSerialPorts())
@@ -264,23 +280,24 @@ namespace Flower.App.ViewModels
             Ports.Clear();
             foreach (var p in set.OrderBy(PortOrder).ThenBy(p => p)) Ports.Add(p);
 
-            // keep a configured-but-missing port visible so the editor shows it
             if (Selected is not null && !string.IsNullOrWhiteSpace(Selected.Port) && !Ports.Contains(Selected.Port))
                 Ports.Add(Selected.Port);
 
             if (Ports.Count == 0)
             {
-                // helpful Linux/macOS hints
                 if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
                     Status = "No serial ports found. On Linux, check /dev/ttyACM* or /dev/ttyUSB*, and that your user is in the 'dialout' (or 'uucp') group. Re-login after adding.";
                 else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
                     Status = "No serial ports found. On macOS, check /dev/tty.* or /dev/cu.* and USB driver permissions.";
                 else
                     Status = "No serial ports found.";
+
+                _uiLog?.Info(Status); // ⬅️ NEW
             }
             else
             {
                 Status = $"Found {Ports.Count} port(s): {string.Join(", ", Ports)}";
+                _uiLog?.Info(Status); // ⬅️ NEW
             }
         }
 

@@ -74,5 +74,8 @@ namespace Flower.App.ViewModels
         Interaction<Unit, FlowerUnit?> AddFlowerInteraction { get; }
         Interaction<FlowerUnit, FlowerUnit?> UpdateFlowerInteraction { get; }
         Interaction<FlowerUnit, string?> SendCommandToFlowerInteraction { get; }
+
+        // ========= Lifecycle =========
+        Task AppendAsync(string text);
     }
 }

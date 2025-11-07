@@ -10,9 +10,9 @@ namespace Flower.Core.Models
     {
         public int Version { get; set; } = 1;
         public string Title { get; set; } = "Untitled Show";
-        public string MainId { get; set; } = "M";
-        public List<FlowerUnit> Flowers { get; set; } = new();
+        public string ProjectId { get; set; } = "M";
         public List<ShowTrack> Tracks { get; set; } = new();
         public bool Repeat { get; set; } = true;
     }
+
 }

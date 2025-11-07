@@ -1,10 +1,9 @@
-﻿// Flower.Core/Services/ShowPlayer.cs
-using Flower.Core.Abstractions.Commands;
+﻿using Flower.Core.Abstractions.Commands;
 using Flower.Core.Abstractions.Factories;
 using Flower.Core.Abstractions.Services;
-using Flower.Core.Enums;
 using Flower.Core.Models;
 using Flower.Core.Records;
+using System.Diagnostics;
 
 namespace Flower.Core.Services
 {
@@ -12,14 +11,17 @@ namespace Flower.Core.Services
     {
         private readonly ICommandRequestFactory _requestFactory;
         private readonly ICmdDispatcher _dispatcher;
+        private readonly IFlowerService _flowerService;   // NEW
         private CancellationTokenSource? _cts;
 
         public ShowPlayerService(
             ICommandRequestFactory requestFactory,
-            ICmdDispatcher dispatcher)
+            ICmdDispatcher dispatcher,
+            IFlowerService flowerService)                  // NEW
         {
             _requestFactory = requestFactory;
             _dispatcher = dispatcher;
+            _flowerService = flowerService;
         }
 
         public Task PlayAsync(ShowProject project)
@@ -27,29 +29,22 @@ namespace Flower.Core.Services
             Stop();
             _cts = new CancellationTokenSource();
 
-            // Build dispatchable events (logical → requests)
             var events = BuildDispatchableEvents(project);
 
-            // Compute loop length in LONG ms
             long loopMs = project.Tracks
-                .Select(t => (long)t.LoopMs)     // ensure long
+                .Select(t => (long)t.LoopMs)
                 .DefaultIfEmpty(0L)
                 .Max();
 
             if (project.Repeat && loopMs == 0L)
                 loopMs = (events.LastOrDefault()?.AtMs ?? 0) + 1000L;
 
-            // Run the timeline (single loop or repeating)
             return RunTimelineAsync(
                 events,
-                SafeInt(loopMs),                 // clamp to int for Task.Delay
+                SafeInt(loopMs),
                 project.Repeat,
                 _cts.Token);
         }
-
-        private static int SafeInt(long value)
-            => value > int.MaxValue ? int.MaxValue : (int)value;
-
 
         public void Stop()
         {
@@ -57,11 +52,14 @@ namespace Flower.Core.Services
             _cts = null;
         }
 
-        // ---- helpers ----
+        private static int SafeInt(long value)
+            => value > int.MaxValue ? int.MaxValue : (int)value;
 
         private List<DispatchableEvent> BuildDispatchableEvents(ShowProject project)
         {
-            var flowers = project.Flowers;
+            // pull live flowers from the runtime (detached from project)
+            var flowers = _flowerService.Flowers; // assume IReadOnlyCollection<FlowerUnit>
+
             var logical = project.Tracks
                 .SelectMany(t => t.Events.Select(ev => (Track: t, Ev: ev)))
                 .OrderBy(p => p.Ev.AtMs)
@@ -72,12 +70,15 @@ namespace Flower.Core.Services
             foreach (var x in logical)
             {
                 var at = x.Ev.AtMs;
-                var (flowerId, cmdId, originalArgs) = x.Ev.Event;
+                var (priority, cmdId, originalArgs) = x.Ev.Event;
 
-                var flower = flowers.FirstOrDefault(f => f.Id == flowerId)
-                          ?? throw new InvalidOperationException($"Flower {flowerId} missing from project.");
+                var flower = flowers.FirstOrDefault(f => f.Priority == priority);
+                if (flower is null)
+                {
+                    Debug.WriteLine($"[ShowPlayer] Skipping event at {at}ms: no flower with Priority={priority}.");
+                    continue; // detach-friendly: missing priority is fine
+                }
 
-                // Single source of truth: factory builds the request (validates, rewrites, sets frames & state handlers)
                 var req = _requestFactory.BuildFor(
                     flower,
                     cmdId,
@@ -89,6 +90,7 @@ namespace Flower.Core.Services
 
             return list;
         }
+
         private async Task RunTimelineAsync(
             IReadOnlyList<DispatchableEvent> events,
             int loopMs,
@@ -101,22 +103,18 @@ namespace Flower.Core.Services
                 foreach (var e in events)
                 {
                     var dueAt = start + e.AtMs;
-                    // wait until it's time
                     while (!ct.IsCancellationRequested && Environment.TickCount64 < dueAt)
                     {
                         var remaining = (int)Math.Max(0, dueAt - Environment.TickCount64);
-                        await Task.Delay(Math.Min(remaining, 25), ct); // coarse wait
+                        await Task.Delay(Math.Min(remaining, 25), ct);
                     }
                     ct.ThrowIfCancellationRequested();
 
-                    // hand off to dispatcher → it will send, await ACK, and mutate state
-                    // (You can choose fire-and-forget if you *don’t* want the timeline to block)
                     _ = _dispatcher.EnqueueAsync(e.Request, ct);
                 }
 
                 if (repeat)
                 {
-                    // ensure we honor loop length (in case last event < loopMs)
                     var loopEnd = start + loopMs;
                     while (!ct.IsCancellationRequested && Environment.TickCount64 < loopEnd)
                     {

@@ -1,19 +1,26 @@
 ﻿using Flower.Core.Abstractions.Stores;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
-using System.Threading.Tasks;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using Newtonsoft.Json.Serialization;
+using System.Xml;
 
 namespace Flower.Infrastructure.Persistence
 {
     public abstract class JsonStoreBase<T> : IJsonStore<T> where T : new()
     {
-        protected JsonSerializerOptions Options { get; } = new(JsonSerializerDefaults.Web)
+        // Newtonsoft settings (camelCase + enums as strings, indented output)
+        protected JsonSerializerSettings Settings { get; } = new JsonSerializerSettings
         {
-            WriteIndented = true
+            Formatting = Newtonsoft.Json.Formatting.Indented,
+            NullValueHandling = NullValueHandling.Ignore,
+            // Avoid accidental date parsing of strings; keep them as string
+            DateParseHandling = DateParseHandling.None,
+            // Parse numbers as double/long primitives (not JValue)
+            FloatParseHandling = FloatParseHandling.Double,
+            ContractResolver = new DefaultContractResolver
+            {
+                NamingStrategy = new CamelCaseNamingStrategy()
+            }
         };
 
         // Default folder: <app>/json
@@ -24,7 +31,8 @@ namespace Flower.Infrastructure.Persistence
 
         protected JsonStoreBase()
         {
-            Options.Converters.Add(new JsonStringEnumConverter(JsonNamingPolicy.CamelCase));
+            // Enum → "camelCase" strings
+            Settings.Converters.Add(new StringEnumConverter(new CamelCaseNamingStrategy(), allowIntegerValues: true));
             Directory.CreateDirectory(Folder);
         }
 
@@ -37,8 +45,8 @@ namespace Flower.Infrastructure.Persistence
             if (!File.Exists(path))
                 return new T();
 
-            using var fs = File.OpenRead(path);
-            return (await JsonSerializer.DeserializeAsync<T>(fs, Options)) ?? new T();
+            var json = await File.ReadAllTextAsync(path).ConfigureAwait(false);
+            return JsonConvert.DeserializeObject<T>(json, Settings) ?? new T();
         }
 
         /// <summary>
@@ -48,8 +56,9 @@ namespace Flower.Infrastructure.Persistence
         {
             var path = ResolvePath(pathOrFileName);
             Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-            using var fs = File.Create(path);
-            await JsonSerializer.SerializeAsync(fs, value, Options);
+
+            var json = JsonConvert.SerializeObject(value, Settings);
+            await File.WriteAllTextAsync(path, json).ConfigureAwait(false);
         }
 
         protected string ResolvePath(string? pathOrFileName)
@@ -57,18 +66,15 @@ namespace Flower.Infrastructure.Persistence
             if (string.IsNullOrWhiteSpace(pathOrFileName))
                 return Path.Combine(Folder, DefaultFileName);
 
-            // If user provided a rooted path, use it as-is
             if (Path.IsPathRooted(pathOrFileName))
                 return pathOrFileName;
 
-            // If it contains any directory separators, treat as relative path
             if (pathOrFileName.Contains(Path.DirectorySeparatorChar) ||
                 pathOrFileName.Contains(Path.AltDirectorySeparatorChar))
             {
                 return Path.GetFullPath(pathOrFileName);
             }
 
-            // Plain filename → put it in the json folder
             return Path.Combine(Folder, pathOrFileName);
         }
     }

@@ -19,6 +19,8 @@ namespace Flower.App.ViewModels
         Task ConfirmAsync();
         void Cancel();
 
+        bool CloseAfterSend { get; set; }
+
         event EventHandler<string?>? CloseRequested;           // returns the commandId (or null if canceled)
     }
 }

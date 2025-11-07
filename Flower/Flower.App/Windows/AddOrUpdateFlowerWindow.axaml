@@ -4,9 +4,9 @@
         xmlns:views="clr-namespace:Flower.App.Views"
         x:Class="Flower.App.Windows.AddFlowerWindow"
         Title="Add Flower"
-        Width="560" Height="360"
-        MinWidth="560" MinHeight="360"
-        MaxWidth="560" MaxHeight="360"
+        Width="760" Height="360"
+        MinWidth="760" MinHeight="360"
+        MaxWidth="760" MaxHeight="360"
         CanResize="False"
         WindowStartupLocation="CenterOwner">
 

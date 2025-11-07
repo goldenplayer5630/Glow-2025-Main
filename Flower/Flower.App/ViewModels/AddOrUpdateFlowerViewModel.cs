@@ -20,6 +20,7 @@ namespace Flower.App.ViewModels
         private FlowerStatus _origFlowerStatus;
         private int _origBrightness;
         private string? _origBusId;
+        private int _origPriority;
 
         // Editable state
         private int _idValue = 1; // 1..30
@@ -28,6 +29,12 @@ namespace Flower.App.ViewModels
         // UX state
         private bool _isBusy;
         private bool _canConfirm;
+
+        private bool _useManualStatusOverride;
+        private FlowerStatus _selectedStatus = FlowerStatus.Closed;
+
+        private int _priorityValue;
+        private string? _priorityError;
 
         // Errors
         private string? _idError;
@@ -44,6 +51,56 @@ namespace Flower.App.ViewModels
         public string FlowerStatusPreview => FlowerStatus.Closed.ToString();
         public string BrightnessPreview => "0";
 
+        // ===== Bindables =====
+        public IReadOnlyList<FlowerCategory> CategoryItems { get; } =
+            Enum.GetValues(typeof(FlowerCategory)).Cast<FlowerCategory>().ToList();
+        public IReadOnlyList<FlowerStatus> StatusItems { get; } =
+            Enum.GetValues(typeof(FlowerStatus)).Cast<FlowerStatus>().ToList();
+
+        public bool UseManualStatusOverride
+        {
+            get => _useManualStatusOverride;
+            set
+            {
+                if (SetField(ref _useManualStatusOverride, value))
+                    RecomputeCanConfirm();
+            }
+        }
+
+        public FlowerStatus SelectedStatus
+        {
+            get => _selectedStatus;
+            set
+            {
+                if (SetField(ref _selectedStatus, value))
+                    RecomputeCanConfirm();
+            }
+        }
+
+        public int PriorityValue
+        {
+            get => _priorityValue;
+            set
+            {
+                if (SetField(ref _priorityValue, value))
+                {
+                    ValidatePriority();
+                    RecomputeCanConfirm();
+                }
+            }
+        }
+
+        public string? PriorityError
+        {
+            get => _priorityError;
+            private set
+            {
+                if (SetField(ref _priorityError, value))
+                    OnPropertyChanged(nameof(HasPriorityError));
+            }
+        }
+        public bool HasPriorityError => !string.IsNullOrWhiteSpace(PriorityError);
+
         public AddOrUpdateFlowerViewModel(IFlowerService flowerService)
         {
             _flowerService = flowerService ?? throw new ArgumentNullException(nameof(flowerService));
@@ -51,6 +108,10 @@ namespace Flower.App.ViewModels
             CategoryItems = Enum.GetValues(typeof(FlowerCategory))
                                 .Cast<FlowerCategory>()
                                 .ToList();
+
+            StatusItems = Enum.GetValues(typeof(FlowerStatus))
+                               .Cast<FlowerStatus>()
+                               .ToList();
 
             RecomputeCanConfirm();
         }
@@ -74,7 +135,7 @@ namespace Flower.App.ViewModels
                 _origFlowerStatus = FlowerStatus.Closed;
                 _origBrightness = 0;
                 _origBusId = null;
-
+                _origPriority = 0;
                 IdValue = SuggestNextFreeId(list);
             }
             else
@@ -90,6 +151,7 @@ namespace Flower.App.ViewModels
                 _origFlowerStatus = existing.FlowerStatus;
                 _origBrightness = existing.CurrentBrightness;
                 _origBusId = existing.BusId;
+                _origPriority = existing.Priority;
             }
 
             // refresh buttons after init
@@ -105,10 +167,6 @@ namespace Flower.App.ViewModels
             }
             return 999;
         }
-
-        // ===== Bindables =====
-        public IReadOnlyList<FlowerCategory> CategoryItems { get; } =
-            Enum.GetValues(typeof(FlowerCategory)).Cast<FlowerCategory>().ToList();
 
         public int IdValue
         {
@@ -190,10 +248,8 @@ namespace Flower.App.ViewModels
             IsBusy = true;
             try
             {
-                // Latest snapshot (robust if list changed since InitAsync)
                 var all = await _flowerService.GetAllAsync().ConfigureAwait(false);
 
-                // Ignore the original (update) when checking for duplicates
                 var dup = all.Any(f => f.Id == newId && f.Id != _originalId);
                 if (dup)
                 {
@@ -202,15 +258,19 @@ namespace Flower.App.ViewModels
                     return;
                 }
 
-                // Build outgoing model; preserve runtime fields on update
+                // Decide which status to write
+                var finalStatus = UseManualStatusOverride ? SelectedStatus
+                                                          : (_originalId is null ? FlowerStatus.Closed : _origFlowerStatus);
+
                 var unit = new FlowerUnit
                 {
                     Id = newId,
                     Category = _selectedCategory,
                     ConnectionStatus = _originalId is null ? ConnectionStatus.Disconnected : _origConnectionStatus,
-                    FlowerStatus = _originalId is null ? FlowerStatus.Closed : _origFlowerStatus,
+                    FlowerStatus = finalStatus,
                     CurrentBrightness = _originalId is null ? 0 : _origBrightness,
-                    BusId = _originalId is null ? null : _origBusId
+                    BusId = _originalId is null ? null : _origBusId,
+                    Priority = PriorityValue // NEW: always use chosen priority
                 };
 
                 CloseRequested?.Invoke(this, unit);
@@ -225,6 +285,7 @@ namespace Flower.App.ViewModels
             }
         }
 
+
         public void Cancel() => CloseRequested?.Invoke(this, null);
 
         // ===== Validation =====
@@ -233,7 +294,20 @@ namespace Flower.App.ViewModels
             var ok = true;
             ok &= ValidateId();
             ok &= ValidateCategory();
+            ok &= ValidatePriority();
             return ok;
+        }
+
+        private bool ValidatePriority()
+        {
+            // Adjust range if you have a different policy
+            if (PriorityValue < 0 || PriorityValue > 999)
+            {
+                PriorityError = "Priority must be between 0 and 999.";
+                return false;
+            }
+            PriorityError = null;
+            return true;
         }
 
         private bool ValidateId()
@@ -273,9 +347,11 @@ namespace Flower.App.ViewModels
         {
             CanConfirm = !IsBusy
                       && !HasIdError
+                      && !HasPriorityError
                       && SelectedCategory != FlowerCategory.Unknown
                       && string.IsNullOrWhiteSpace(FormError);
         }
+
 
         // ----- helpers -----
         protected bool SetField<T>(ref T field, T value, [CallerMemberName] string? name = null)
@@ -288,5 +364,8 @@ namespace Flower.App.ViewModels
 
         protected void OnPropertyChanged([CallerMemberName] string? name = null)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+
+
+
     }
 }

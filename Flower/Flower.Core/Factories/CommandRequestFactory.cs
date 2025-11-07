@@ -25,29 +25,28 @@ namespace Flower.Core.Services
             if (flower is null) throw new ArgumentNullException(nameof(flower));
             if (string.IsNullOrWhiteSpace(commandId)) throw new ArgumentNullException(nameof(commandId));
 
-            // Start with originals; we may rewrite below.
-            var cmdId = commandId;
+            var cmdId = commandId.ToLower();
             var args = new Dictionary<string, object?>(rawArgs ?? new Dictionary<string, object?>(), StringComparer.OrdinalIgnoreCase);
 
-            // Resolve current command
             var cmd = _commands.GetById(cmdId);
 
-            // Validate support
             if (!cmd.SupportedCategories.Contains(flower.Category))
                 throw new InvalidOperationException($"Command {cmd.Id} not supported for {flower.Category}.");
 
             // ---- Idempotency + smart rewrite ----
-            // If OPEN/CLOSE is a no-op, we’ll skip it via ShouldSkip.
-            // If a combined motor+led.ramp is a no-op for the motor, rewrite to plain led.ramp (keep endIntensity/durationMs).
+            // (1) Compute motor skip based on the ORIGINAL command.
             Func<FlowerUnit, bool>? shouldSkip = cmd.Id switch
             {
                 "motor.open" => f => f.FlowerStatus == FlowerStatus.Open,
                 "motor.close" => f => f.FlowerStatus == FlowerStatus.Closed,
+                "motor.open.led.ramp" => f => f.FlowerStatus == FlowerStatus.Open,
+                "motor.close.led.ramp" => f => f.FlowerStatus == FlowerStatus.Closed,
                 _ => null
             };
 
             bool isNoOpNow = shouldSkip?.Invoke(flower) ?? false;
 
+            // (2) If a combined motor+LED ramp is motor-no-op, rewrite to pure LED ramp.
             if (isNoOpNow && (cmd.Id == "motor.open.led.ramp" || cmd.Id == "motor.close.led.ramp"))
             {
                 cmdId = "led.ramp";
@@ -58,15 +57,39 @@ namespace Flower.Core.Services
                 };
             }
 
+            // Re-resolve command after any rewrite.
             if (cmdId != commandId)
                 cmd = _commands.GetById(cmdId);
 
-            // Args validation for (possibly) rewritten command
+            // (3) IMPORTANT: Recompute shouldSkip *for the final command*.
+            // LED-only commands must not inherit motor skip semantics.
+            shouldSkip = cmd.Id switch
+            {
+                "motor.open" => f => f.FlowerStatus == FlowerStatus.Open,
+                "motor.close" => f => f.FlowerStatus == FlowerStatus.Closed,
+                _ => null
+            };
+
+            // Validate args for the final command.
             cmd.ValidateArgs(flower.Category, args);
 
-            // Frames + expected state transitions
+            // Build frames + state transitions
             var frames = cmd.BuildPayload(flower.Id, flower.Category, args);
-            var onAck = cmd.StateOnAck(flower.Category, args);
+
+            // Base state mutations defined by the command
+            var onAckBase = cmd.StateOnAck(flower.Category, args);
+
+            // (4) Safety: LED commands must never flip Open/Close state.
+            var onAck = cmd.Id.StartsWith("led.", StringComparison.OrdinalIgnoreCase)
+                ? new Func<FlowerUnit, FlowerUnit>(f =>
+                {
+                    var before = f.FlowerStatus;
+                    var updated = onAckBase(f);
+                    updated.FlowerStatus = before; // preserve motor state
+                    return updated;
+                })
+                : onAckBase;
+
             var onTimeout = static (FlowerUnit f) =>
             {
                 f.ConnectionStatus = ConnectionStatus.Degraded;

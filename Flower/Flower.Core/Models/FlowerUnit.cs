@@ -17,6 +17,7 @@ namespace Flower.Core.Models
         private ConnectionStatus _connectionStatus;
         private FlowerStatus _flowerStatus;
         private int _currentBrightness;
+        private int _priority;
         private string? _busId;
 
         // This is the one that was throwing:
@@ -62,6 +63,12 @@ namespace Flower.Core.Models
         {
             get => _assignSelected;
             set => this.RaiseAndSetIfChanged(ref _assignSelected, value);
+        }
+
+        public int Priority
+        {
+            get => _priority;
+            set => this.RaiseAndSetIfChanged(ref _priority, value);
         }
     }
 }
