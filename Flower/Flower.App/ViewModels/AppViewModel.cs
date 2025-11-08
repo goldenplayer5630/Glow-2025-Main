@@ -133,6 +133,8 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
     public ReactiveCommand<Unit, Unit> LoadShowCommand { get; }
     public ReactiveCommand<Unit, Unit> PlayCommand { get; }
     public ReactiveCommand<Unit, Unit> StopCommand { get; }
+    public ReactiveCommand<Unit, Unit> EmergencyStopCommand { get; }
+
 
     public ReactiveCommand<Unit, Unit> ConnectFlowerCommand { get; }
     public ReactiveCommand<Unit, Unit> DisconnectFlowerCommand { get; }
@@ -158,6 +160,7 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
     public Interaction<IReadOnlyList<FlowerUnit>, string?> AssignBusesInteraction { get; } = new();
     public Interaction<FlowerUnit, string?> SendCommandToFlowerInteraction { get; } = new();
     public Interaction<Unit, ShowProject?> LoadShowInteraction { get; } = new();
+
 
     // ========= Ctor =========
     public AppViewModel(
@@ -236,6 +239,7 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
             .ToProperty(this, vm => vm.CanAssignBuses, initialValue: Flowers.Any(f => f.AssignSelected), scheduler: RxApp.MainThreadScheduler);
 
         AssignBusesCommand = ReactiveCommand.CreateFromTask(AssignBusesAsync, anySelectedObs);
+        EmergencyStopCommand = ReactiveCommand.CreateFromTask(EmergencyStopAsync);
 
         // === Other Commands ===
         ConnectFlowerCommand = ReactiveCommand.CreateFromTask(ConnectFlowerAsync, this.WhenAnyValue(vm => vm.SelectedFlower).Select(sf => sf != null));
@@ -358,6 +362,85 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
         _player.Stop();
         _ = AppendAsync("STOP\n");
     }
+
+    private async Task EmergencyStopAsync()
+    {
+        // 1) Stop the running show immediately
+        _player.Stop();
+        await AppendAsync("EMERGENCY STOP: stopping show and turning off ALL LEDs...\n");
+
+        // 2) Snapshot buses (do NOT enumerate the live collection directly later)
+        var buses = Flowers
+            .Select(f => f.BusId)
+            .Where(b => !string.IsNullOrWhiteSpace(b) && !string.Equals(b, "None", StringComparison.OrdinalIgnoreCase))
+            .Distinct()
+            .ToList();
+
+        if (buses.Count == 0)
+        {
+            await AppendAsync("No buses assigned; nothing to broadcast to.\n");
+            StatusText = "Emergency stop: no buses.";
+            return;
+        }
+
+        // 3) Broadcast LED:0 per bus (id 0 = broadcast)
+        foreach (var bus in buses)
+        {
+            try
+            {
+                var broadcast = new FlowerUnit
+                {
+                    Id = 0, // broadcast
+                    BusId = bus,
+                    Category = FlowerCategory.SmallTulip,
+                    ConnectionStatus = ConnectionStatus.Connected,
+                };
+
+                var args = new Dictionary<string, object>
+                {
+                    // adapt to your LED command’s parameter name(s)
+                    ["intensity"] = 0,
+                    ["level"] = 0,
+                    ["brightness"] = 0,
+                };
+
+                var outcome = await _commandService.SendCommandAsync("led.set", broadcast, args);
+                await AppendAsync($"Bus {bus}: LED 0 broadcast → {outcome}\n");
+            }
+            catch (Exception ex)
+            {
+                await AppendAsync($"Bus {bus}: LED 0 broadcast FAILED: {ex.Message}\n");
+            }
+        }
+
+        // 4) Snapshot flowers BEFORE updating them, then update safely
+        var flowerSnapshot = _flowerService.Flowers.ToList();
+        foreach (var flower in flowerSnapshot)
+        {
+            try
+            {
+                flower.CurrentBrightness = 0;
+                await _flowerService.UpdateAsync(flower);
+            }
+            catch (Exception ex)
+            {
+                await AppendAsync($"Flower {flower.Id}: update FAILED: {ex.Message}\n");
+            }
+        }
+
+        try
+        {
+            await _flowerService.SaveAsync();
+        }
+        catch (Exception ex)
+        {
+            await AppendAsync($"Save FAILED: {ex.Message}\n");
+        }
+
+        StatusText = "EMERGENCY STOP sent.";
+    }
+
+
 
     // ========= Flowers: Load/Save =========
 

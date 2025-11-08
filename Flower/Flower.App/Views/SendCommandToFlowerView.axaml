@@ -6,6 +6,28 @@
              x:Class="Flower.App.Views.SendCommandToFlowerView"
              x:DataType="viewmodel:SendCommandToFlowerViewModel">
 
+    <UserControl.Styles>
+            <!-- Buttons -->
+            <Style Selector="Button">
+              <Setter Property="FontSize" Value="18"/>
+              <Setter Property="MinHeight" Value="56"/>
+              <Setter Property="MinWidth" Value="140"/>
+              <Setter Property="Padding" Value="16,10"/>
+              <Setter Property="CornerRadius" Value="8"/>
+              <Setter Property="HorizontalContentAlignment" Value="Center"/>
+              <Setter Property="VerticalContentAlignment" Value="Center"/>
+            </Style>
+
+            <!-- ComboBox -->
+            <Style Selector="ComboBox">
+              <Setter Property="FontSize" Value="18"/>
+              <Setter Property="MinHeight" Value="48"/>
+              <Setter Property="Padding" Value="12,8"/>
+              <Setter Property="MinWidth" Value="220"/>
+              <Setter Property="VerticalContentAlignment" Value="Center"/>
+            </Style>
+    </UserControl.Styles>
+
   <Grid RowDefinitions="Auto,*,Auto,*,Auto,*,Auto"
         ColumnDefinitions="160,*"
         Margin="16">

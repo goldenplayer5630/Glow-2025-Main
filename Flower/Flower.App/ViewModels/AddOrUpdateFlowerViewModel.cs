@@ -23,7 +23,7 @@ namespace Flower.App.ViewModels
         private int _origPriority;
 
         // Editable state
-        private int _idValue = 1; // 1..30
+        private int _idValue = 1; // 1..30 (but we allow up to 999)
         private FlowerCategory _selectedCategory = FlowerCategory.SmallTulip;
 
         // UX state
@@ -42,6 +42,7 @@ namespace Flower.App.ViewModels
 
         // For fast duplicate checks
         private HashSet<int> _existingIds = new();
+        private HashSet<int> _existingPriorities = new();
 
         // Events
         public event PropertyChangedEventHandler? PropertyChanged;
@@ -119,14 +120,19 @@ namespace Flower.App.ViewModels
         // ===== Lifecycle =====
         /// <summary>
         /// Initializes the VM for Add (existing==null) or Update (existing!=null).
-        /// - Preloads existing Ids.
-        /// - Suggests next free Id for Add.
-        /// - Prefills & preserves runtime fields for Update.
+        /// - Preloads existing Ids and Priorities.
+        /// - Suggests next free Id/Priority for Add.
+        /// - Prefills & preserves runtime fields for Update, excluding current Id/Priority from duplicate checks.
         /// </summary>
         public async Task InitAsync(FlowerUnit? existing = null)
         {
             var list = await _flowerService.GetAllAsync().ConfigureAwait(false);
+
             _existingIds = list.Select(f => f.Id).ToHashSet();
+            _existingPriorities = list
+                .Select(f => f.Priority)
+                .Where(p => p >= 1 && p <= 999) // ignore zeros or out-of-policy values
+                .ToHashSet();
 
             if (existing is null)
             {
@@ -136,13 +142,17 @@ namespace Flower.App.ViewModels
                 _origBrightness = 0;
                 _origBusId = null;
                 _origPriority = 0;
+
                 IdValue = SuggestNextFreeId(list);
+                PriorityValue = SuggestNextFreePriority(list);
             }
             else
             {
                 _originalId = existing.Id;
-                // Important: allow keeping the same Id by excluding it from duplicates
+
+                // Allow keeping current Id/Priority by excluding them from duplicates
                 _existingIds.Remove(existing.Id);
+                _existingPriorities.Remove(existing.Priority);
 
                 IdValue = existing.Id;
                 SelectedCategory = existing.Category;
@@ -152,6 +162,8 @@ namespace Flower.App.ViewModels
                 _origBrightness = existing.CurrentBrightness;
                 _origBusId = existing.BusId;
                 _origPriority = existing.Priority;
+
+                PriorityValue = existing.Priority;
             }
 
             // refresh buttons after init
@@ -165,6 +177,21 @@ namespace Flower.App.ViewModels
             {
                 if (!used.Contains(candidate)) return candidate;
             }
+            return 999;
+        }
+
+        private static int SuggestNextFreePriority(IReadOnlyList<FlowerUnit> items)
+        {
+            var used = items
+                .Select(f => f.Priority)
+                .Where(p => p >= 1 && p <= 999)
+                .ToHashSet();
+
+            for (int candidate = 1; candidate <= 999; candidate++)
+            {
+                if (!used.Contains(candidate)) return candidate;
+            }
+            // Fallback: mirror Id logic
             return 999;
         }
 
@@ -244,17 +271,27 @@ namespace Flower.App.ViewModels
             }
 
             var newId = IdValue;
+            var newPriority = PriorityValue;
 
             IsBusy = true;
             try
             {
+                // Server-side double check
                 var all = await _flowerService.GetAllAsync().ConfigureAwait(false);
 
-                var dup = all.Any(f => f.Id == newId && f.Id != _originalId);
-                if (dup)
+                var dupId = all.Any(f => f.Id == newId && f.Id != _originalId);
+                if (dupId)
                 {
                     IdError = $"A flower with Id {newId} already exists.";
                     FormError = "Please choose a unique Id.";
+                    return;
+                }
+
+                var dupPriority = all.Any(f => f.Priority == newPriority && f.Id != _originalId);
+                if (dupPriority)
+                {
+                    PriorityError = $"Priority {newPriority} is already used by another flower.";
+                    FormError = "Please choose a unique Priority.";
                     return;
                 }
 
@@ -270,7 +307,7 @@ namespace Flower.App.ViewModels
                     FlowerStatus = finalStatus,
                     CurrentBrightness = _originalId is null ? 0 : _origBrightness,
                     BusId = _originalId is null ? null : _origBusId,
-                    Priority = PriorityValue // NEW: always use chosen priority
+                    Priority = newPriority
                 };
 
                 CloseRequested?.Invoke(this, unit);
@@ -284,7 +321,6 @@ namespace Flower.App.ViewModels
                 IsBusy = false;
             }
         }
-
 
         public void Cancel() => CloseRequested?.Invoke(this, null);
 
@@ -300,12 +336,19 @@ namespace Flower.App.ViewModels
 
         private bool ValidatePriority()
         {
-            // Adjust range if you have a different policy
-            if (PriorityValue < 0 || PriorityValue > 999)
+            // Priority behaves like a secondary ID: range 1..999 and unique
+            if (PriorityValue < 1 || PriorityValue > 999)
             {
-                PriorityError = "Priority must be between 0 and 999.";
+                PriorityError = "Priority must be between 1 and 999.";
                 return false;
             }
+
+            if (_existingPriorities.Contains(PriorityValue))
+            {
+                PriorityError = $"Priority {PriorityValue} is already in use.";
+                return false;
+            }
+
             PriorityError = null;
             return true;
         }
@@ -352,7 +395,6 @@ namespace Flower.App.ViewModels
                       && string.IsNullOrWhiteSpace(FormError);
         }
 
-
         // ----- helpers -----
         protected bool SetField<T>(ref T field, T value, [CallerMemberName] string? name = null)
         {
@@ -364,8 +406,5 @@ namespace Flower.App.ViewModels
 
         protected void OnPropertyChanged([CallerMemberName] string? name = null)
             => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
-
-
-
     }
 }

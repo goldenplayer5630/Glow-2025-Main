@@ -6,6 +6,7 @@
     xmlns:vm="clr-namespace:Flower.App.ViewModels"
     xmlns:models="clr-namespace:Flower.Core.Models;assembly=Flower.Core"
     xmlns:conv="clr-namespace:Flower.App.Utilities;assembly=Flower.App"
+    xmlns:util="clr-namespace:Flower.App.Utilities;assembly=Flower.App"
     x:Class="Flower.App.Views.MainView"
     x:DataType="vm:AppViewModel">
 
@@ -42,6 +43,34 @@
         <Style Selector="Button.stop:disabled">
           <Setter Property="Opacity" Value="0.6"/>
         </Style>
+
+        <!-- Emergency Stop = super red -->
+        <Style Selector="Button.estop">
+          <Setter Property="Background" Value="#C62828"/>
+          <Setter Property="Foreground" Value="White"/>
+          <Setter Property="BorderBrush" Value="#8E1E1E"/>
+          <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+        <Style Selector="Button.stop:pointerover">
+          <Setter Property="Background" Value="#D32F2F"/>
+        </Style>
+        <Style Selector="Button.stop:pressed">
+          <Setter Property="Background" Value="#B71C1C"/>
+        </Style>
+        <Style Selector="Button.stop:disabled">
+          <Setter Property="Opacity" Value="0.6"/>
+        </Style>
+
+        <Style Selector="Button.estop:pointerover">
+          <Setter Property="Background" Value="#F44336"/>
+        </Style>
+
+        <Style Selector="Button.estop:pressed">
+          <Setter Property="Background" Value="#C62828"/>
+        </Style>
+
+
+
     <!-- Buttons -->
     <Style Selector="Button">
       <Setter Property="FontSize" Value="18"/>
@@ -52,6 +81,8 @@
       <Setter Property="HorizontalContentAlignment" Value="Center"/>
       <Setter Property="VerticalContentAlignment" Value="Center"/>
     </Style>
+
+
 
     <!-- ComboBox -->
     <Style Selector="ComboBox">
@@ -74,6 +105,8 @@
       <Setter Property="FontSize" Value="18"/>
       <Setter Property="FontWeight" Value="SemiBold"/>
     </Style>
+
+      <!-- Emergency Stop = super red -->
   </UserControl.Styles>
 
     <UserControl.Resources>
@@ -82,50 +115,39 @@
 
 
   <!-- Layout: top serial, middle 3-cols (show | monitor | flowers), bottom status -->
-  <Grid RowDefinitions="Auto,*,Auto" ColumnDefinitions="1.0*,1.0*,2.0*" Margin="16">
-
-    <!-- ===== Row 0: Ports / Busses (full width) ===== -->
-    <Border Grid.Row="0" Grid.ColumnSpan="3" Padding="12" Classes="card">
-      <Grid ColumnDefinitions="Auto,Auto,Auto,Auto,*,Auto" RowDefinitions="Auto">
-        <TextBlock Grid.Column="0"
-                Text="Serial Ports:"
-                FontSize="18"
-                VerticalAlignment="Center"
-                Margin="0,0,8,0"/>
-        <Button Grid.Column="5"
-                Content="Manage Buses"
-                Command="{Binding OpenManageBusesCommand}"/>
-      </Grid>
-    </Border>
-
-
-    <!-- ===== Row 1: Show (left) + Monitor (right) close together ===== -->
+  <Grid RowDefinitions="Auto,*,Auto" ColumnDefinitions="1.0*,1.0*,2.0*">
+    <!-- ===== Row 0: Show (left) + Monitor (right) close together ===== -->
     <Grid Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2"
             ColumnDefinitions="160,8,*">
         <!-- Show buttons (left) -->
-        <Border Grid.Column="0" Padding="12" Classes="card">
-        <StackPanel Spacing="12">
-            <Button Content="Creator" Command="{Binding OpenShowCreatorCommand}"/>
-            <Button Content="Load Show"    Command="{Binding LoadShowCommand}"/>
-            <Button Content="Play"         Command="{Binding PlayCommand}" Classes="play"/>
-            <Button Content="Stop"         Command="{Binding StopCommand}" Classes="stop"/>
-        </StackPanel>
-        </Border>
+    <!-- Show buttons (left) -->
+    <Border Grid.Column="0" Padding="12" Classes="card">
+      <StackPanel Spacing="12">
+        <Button Content="Manage Buses" FontSize="14" Command="{Binding OpenManageBusesCommand}"/>
+        <Button Content="Creator" Command="{Binding OpenShowCreatorCommand}"/>
+        <Button Content="Load Show" Command="{Binding LoadShowCommand}"/>
+        <Button Content="Play Show" Command="{Binding PlayCommand}" Classes="play"/>
+        <Button Content="Stop Show" Command="{Binding StopCommand}" Classes="stop"/>
+      </StackPanel>
+    </Border>
+
 
         <!-- 8px spacer is the middle column -->
 
         <!-- Monitor (right) -->
         <Border Grid.Column="2" Padding="12" Classes="card">
-        <TextBox Text="{Binding MonitorText}"
-                    AcceptsReturn="True"
-                    IsReadOnly="True"
-                    FontSize="16"
-                    ScrollViewer.VerticalScrollBarVisibility="Auto"/>
+          <TextBox Text="{Binding MonitorText}"
+                   AcceptsReturn="True"
+                   IsReadOnly="True"
+                   FontSize="16"
+                   ScrollViewer.VerticalScrollBarVisibility="Auto"
+                   util:AutoScrollBehavior.AutoScrollToEnd="True"/>
         </Border>
+
     </Grid>
 
 
-    <!-- ===== Row 1, Col 2: Flowers panel ===== -->
+    <!-- ===== Row 0, Col 2: Flowers panel ===== -->
     <Border Grid.Row="1" Grid.Column="2" Padding="12" Classes="card">
       <Grid RowDefinitions="Auto,*,Auto">
         <!-- Header + actions in 3x2 grid -->
@@ -133,39 +155,36 @@
           <!-- Header + actions in 3x2 grid -->
           <Grid Margin="0,0,0,12"
                 ColumnDefinitions="*,*,*,*"
-                RowDefinitions="Auto,Auto">
-
-            <!-- Row 0 -->
-            <Button Grid.Row="0" Grid.Column="0"
-                    IsEnabled="False"
-                    Content=""
-                    Opacity="0.35"
+                RowDefinitions="Auto,Auto,Auto">
+            <!--- Row 0 -->
+            <Button Grid.Row="0" Content="EMERGENCY STOP"
+                Grid.ColumnSpan="4"
+                FontSize="14"
+                                Command="{Binding EmergencyStopCommand}"
+                Width="250"
+                Classes="estop"
+                Margin="0,0,12,12"
+                ac:ToolTip.Tip="Immediately stop show and turn off all LEDs via broadcast" />
+            <!-- Row 1 -->
+            <Button Grid.Row="1" Grid.Column="0"
+                    Content="Assign Bus"
+                    FontSize="16"
+                    Command="{Binding AssignBusesCommand}"
+                    IsEnabled="{Binding CanAssignBuses}"
                     Margin="0,0,12,12"/>
 
-            <Button Grid.Row="0" Grid.Column="1"
-                    Content="Send Cmd"
-                    Command="{Binding SendCommandToFlowerCommand}"
-                    IsEnabled="{Binding CanSendCommand}"
+                <Button Grid.Row="1" Grid.Column="1"
+                    Content="Disconnect All"
+                    Command="{Binding DisconnectAllFlowersCommand}"
+                    FontSize="16"
                     Margin="0,0,12,12"/>
 
-            <StackPanel Grid.Row="0" Grid.Column="2">
-                <!-- Placeholder when neither action makes sense -->
-                <Button Content="Connect All"
-                        IsVisible="{Binding DisabledConnectAll}"
-                        IsEnabled="False"/>
+                <Button Grid.Row="1" Grid.Column="2"
+                    Content="Connect All"
+                    Command="{Binding ConnectAllFlowersCommand}"
+                    Margin="0,0,12,12"/>
 
-                <Button Content="Connect All"
-                        Command="{Binding ConnectAllFlowersCommand}"
-                        IsVisible="{Binding CanConnectAll}"/>
-
-                <Button Content="Disconnect All"
-                        FontSize="14"
-                        Command="{Binding DisconnectAllFlowersCommand}"
-                        IsVisible="{Binding CanDisconnectAll}"/>
-            </StackPanel>
-
-
-          <StackPanel Grid.Row="0" Grid.Column="3">
+          <StackPanel Grid.Row="1" Grid.Column="3">
           <Button Content="Connect"
                     IsVisible="{Binding DisabledConnect}"
                     IsEnabled="False"/>
@@ -181,24 +200,23 @@
           </StackPanel>
 
 
-            <!-- Row 1 -->
-            <Button Grid.Row="1" Grid.Column="0"
-                    Content="Assign Bus"
-                    FontSize="16"
-                    Command="{Binding AssignBusesCommand}"
-                    IsEnabled="{Binding CanAssignBuses}"
-                    Margin="0,0,12,0"/>
-            <Button Grid.Row="1" Grid.Column="1"
+            <!-- Row 2 -->
+            <Button Grid.Row="2" Grid.Column="0"
+                    Content="Send Cmd"
+                    Command="{Binding SendCommandToFlowerCommand}"
+                    IsEnabled="{Binding CanSendCommand}"
+                    Margin="0,0,0,0"/>
+            <Button Grid.Row="2" Grid.Column="1"
                     Content="Add"
                     Command="{Binding AddFlowerCommand}"
                     Margin="0,0,12,0"/>
 
-            <Button Grid.Row="1" Grid.Column="2"
+            <Button Grid.Row="2" Grid.Column="2"
                     Content="Update"
                     Command="{Binding UpdateFlowerCommand}"
                     Margin="0,0,12,0"/>
 
-            <Button Grid.Row="1" Grid.Column="3"
+            <Button Grid.Row="2" Grid.Column="3"
                     Content="Delete"
                     Command="{Binding DeleteSelectedFlowerCommand}"
                     Margin="0,0,0,0"/>

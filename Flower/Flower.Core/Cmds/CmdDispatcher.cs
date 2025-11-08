@@ -72,17 +72,20 @@ namespace Flower.Core.Cmds
                 // ------------------------------------
 
                 // ---- HARD GATE: don't run on degraded/disconnected ----
-                var fu = await _flowers.GetAsync(key.FlowerId);
-                if ((fu is null || fu.ConnectionStatus is ConnectionStatus.Degraded or ConnectionStatus.Disconnected) && work.Req.CommandId != "ping")
+                if (key.FlowerId != 0)
                 {
-                    work.Tcs.TrySetResult(CommandOutcome.SkippedNotConnected);
-                    continue;
-                }
+                    var fu = await _flowers.GetAsync(key.FlowerId);
+                    if ((fu is null || fu.ConnectionStatus is ConnectionStatus.Degraded or ConnectionStatus.Disconnected) && work.Req.CommandId != "ping")
+                    {
+                        work.Tcs.TrySetResult(CommandOutcome.SkippedNotConnected);
+                        continue;
+                    }
 
-                if (work.Req.ShouldSkip != null && work.Req.ShouldSkip(fu))
-                {
-                    work.Tcs.TrySetResult(CommandOutcome.SkippedNoOp);
-                    continue;
+                    if (work.Req.ShouldSkip != null && work.Req.ShouldSkip(fu))
+                    {
+                        work.Tcs.TrySetResult(CommandOutcome.SkippedNoOp);
+                        continue;
+                    }
                 }
 
                 // -------------------------------------------------------
@@ -98,7 +101,11 @@ namespace Flower.Core.Cmds
                         r.Frames, ProtocolMessageType.Command);
 
                     var ack = await protocol.SendAndWaitAckAsync(env, r.AckTimeout);
-                    outcome = ack.Type == ProtocolMessageType.Ack ? CommandOutcome.Acked : CommandOutcome.Nacked;
+
+                    if (r.FlowerId == 0)
+                        outcome = CommandOutcome.Acked;
+                    else
+                        outcome = ack.Type == ProtocolMessageType.Ack ? CommandOutcome.Acked : CommandOutcome.Nacked;
                 }
                 catch (OperationCanceledException) { outcome = CommandOutcome.Timeout; }
                 catch { outcome = CommandOutcome.Timeout; }
