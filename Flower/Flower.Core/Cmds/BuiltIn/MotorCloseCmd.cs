@@ -21,6 +21,7 @@ namespace Flower.Core.Cmds.BuiltIn
         {
             FlowerCategory.SmallTulip,
             FlowerCategory.BigTulip,
+            FlowerCategory.Any
         };
         public IReadOnlyCollection<FlowerCategory> SupportedCategories => _supported;
 

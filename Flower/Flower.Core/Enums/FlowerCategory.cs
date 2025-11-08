@@ -10,6 +10,7 @@ namespace Flower.Core.Enums
     {
         BigTulip,
         SmallTulip,
-        Unknown
+        Unknown,
+        Any
     }
 }

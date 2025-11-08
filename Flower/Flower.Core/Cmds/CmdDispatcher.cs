@@ -103,11 +103,11 @@ namespace Flower.Core.Cmds
                     var ack = await protocol.SendAndWaitAckAsync(env, r.AckTimeout);
 
                     if (r.FlowerId == 0)
-                        outcome = CommandOutcome.Acked;
+                        outcome = CommandOutcome.Timeout;
                     else
                         outcome = ack.Type == ProtocolMessageType.Ack ? CommandOutcome.Acked : CommandOutcome.Nacked;
                 }
-                catch (OperationCanceledException) { outcome = CommandOutcome.Timeout; }
+                catch (OperationCanceledException) { outcome = CommandOutcome.Acked; }
                 catch { outcome = CommandOutcome.Timeout; }
 
                 // State transitions

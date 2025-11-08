@@ -53,10 +53,16 @@ public static class Program
                 // Commands (domain-level, human-readable Ids)
                 s.AddSingleton<IFlowerCommand, LedSetCmd>();
                 s.AddSingleton<IFlowerCommand, LedRampCmd>();
+                s.AddSingleton<IFlowerCommand, LedRampInCmd>();
+                s.AddSingleton<IFlowerCommand, LedRampOutCmd>();
+                s.AddSingleton<IFlowerCommand, RgbCmd>();
+                s.AddSingleton<IFlowerCommand, RgbInnerCmd>();
+                s.AddSingleton<IFlowerCommand, RgbOuterCmd>();
                 s.AddSingleton<IFlowerCommand, MotorOpenCmd>();
                 s.AddSingleton<IFlowerCommand, MotorCloseCmd>();
                 s.AddSingleton<IFlowerCommand, MotorOpenLedRampCmd>();
                 s.AddSingleton<IFlowerCommand, MotorCloseLedRamp>();
+                s.AddSingleton<IFlowerCommand, MotorStopCmd>();
                 s.AddSingleton<IFlowerCommand, PingCmd>();
                 // (optional) s.AddSingleton<IFlowerCommand, InitCmd>();
 

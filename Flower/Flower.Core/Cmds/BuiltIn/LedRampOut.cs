@@ -1,16 +1,18 @@
-﻿// LedRampCmd.cs
-using System.Collections.Generic;
-using System.Text;
-using Flower.Core.Abstractions.Commands;
+﻿using Flower.Core.Abstractions.Commands;
 using Flower.Core.Enums;
 using Flower.Core.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
 namespace Flower.Core.Cmds.BuiltIn
 {
-    public sealed class LedRampCmd : IFlowerCommand
+    public sealed class LedRampOutCmd : IFlowerCommand
     {
-        public string Id => "led.ramp";
-        public string DisplayName => "LED ramp";
+        public string Id => "led.ramp.out";
+        public string DisplayName => "LED ramp inner";
 
         public IReadOnlyDictionary<string, object?>? args => _args;
         private static readonly IReadOnlyDictionary<string, object?> _args =
@@ -22,7 +24,6 @@ namespace Flower.Core.Cmds.BuiltIn
 
         private static readonly FlowerCategory[] _supported =
         {
-            FlowerCategory.SmallTulip,
             FlowerCategory.BigTulip,
             FlowerCategory.Any
         };
@@ -48,7 +49,7 @@ namespace Flower.Core.Cmds.BuiltIn
         {
             int endIntensity = (int)args["endIntensity"]!;
             int durationMs = (int)args["durationMs"]!;
-            var frame = $"{flowerId}/LEDRAMP:{endIntensity},{durationMs}\n";
+            var frame = $"{flowerId}/LEDRAMPOUT:{endIntensity},{durationMs}\n";
             return new[] { Encoding.ASCII.GetBytes(frame) };
         }
 

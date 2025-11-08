@@ -9,44 +9,35 @@ using System.Threading.Tasks;
 
 namespace Flower.Core.Cmds.BuiltIn
 {
-    public sealed class MotorOpenCmd : IFlowerCommand
+    public class MotorStopCmd : IFlowerCommand
     {
-        public string Id => "motor.open";
-        public string DisplayName => "Open Motor";
-
-        // No arguments needed for this command.
+        public string Id => "motor.stop";
+        public string DisplayName => "Stop Motor";
         public IReadOnlyDictionary<string, object?>? args => null;
-
         private static readonly FlowerCategory[] _supported =
         {
-            FlowerCategory.SmallTulip,
             FlowerCategory.BigTulip,
             FlowerCategory.Any
         };
         public IReadOnlyCollection<FlowerCategory> SupportedCategories => _supported;
-
         public void ValidateArgs(FlowerCategory category, IReadOnlyDictionary<string, object?> args)
         {
-            // No args to validate.
+            // No arguments to validate
         }
-
         public IReadOnlyList<byte[]> BuildPayload(
             int flowerId,
             FlowerCategory category,
             IReadOnlyDictionary<string, object?> args)
         {
-            var frame = $"{flowerId}/OPEN\n";
+            var frame = $"{flowerId}/STOP\n";
             return new[] { Encoding.ASCII.GetBytes(frame) };
         }
-
-        public System.Func<FlowerUnit, FlowerUnit>? StateOnAck(
+        public Func<FlowerUnit, FlowerUnit>? StateOnAck(
             FlowerCategory category,
             IReadOnlyDictionary<string, object?> args)
         {
-            // On ACK: mark as Open + Healthy
             return f =>
             {
-                f.FlowerStatus = FlowerStatus.Open;
                 f.ConnectionStatus = ConnectionStatus.Connected;
                 return f;
             };

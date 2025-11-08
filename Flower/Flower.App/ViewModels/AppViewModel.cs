@@ -392,9 +392,12 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
                 {
                     Id = 0, // broadcast
                     BusId = bus,
-                    Category = FlowerCategory.SmallTulip,
+                    Category = FlowerCategory.Any,
                     ConnectionStatus = ConnectionStatus.Connected,
                 };
+
+                var outcomeMotor = await _commandService.SendCommandAsync("motor.stop", broadcast, new Dictionary<string, object>());
+                await AppendAsync($"Bus {bus}: MOTOR STOP broadcast → {outcomeMotor}\n");
 
                 var args = new Dictionary<string, object>
                 {
@@ -404,8 +407,8 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
                     ["brightness"] = 0,
                 };
 
-                var outcome = await _commandService.SendCommandAsync("led.set", broadcast, args);
-                await AppendAsync($"Bus {bus}: LED 0 broadcast → {outcome}\n");
+                var outcomeLeds = await _commandService.SendCommandAsync("led.set", broadcast, args);
+                await AppendAsync($"Bus {bus}: LED 0 broadcast → {outcomeLeds}\n");
             }
             catch (Exception ex)
             {

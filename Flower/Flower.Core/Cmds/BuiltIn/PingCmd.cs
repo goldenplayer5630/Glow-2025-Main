@@ -21,6 +21,7 @@ namespace Flower.Core.Cmds.BuiltIn
         {
             FlowerCategory.SmallTulip,
             FlowerCategory.BigTulip,
+            FlowerCategory.Any
         };
         public IReadOnlyCollection<FlowerCategory> SupportedCategories => _supported;
 
@@ -34,7 +35,7 @@ namespace Flower.Core.Cmds.BuiltIn
             FlowerCategory category,
             IReadOnlyDictionary<string, object?> args)
         {
-            var frame = $"{flowerId}/PING:40\n";
+            var frame = $"{flowerId}/PING\n";
             return new[] { Encoding.ASCII.GetBytes(frame) };
         }
 

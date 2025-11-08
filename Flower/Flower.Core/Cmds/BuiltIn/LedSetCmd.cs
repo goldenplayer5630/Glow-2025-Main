@@ -1,10 +1,10 @@
 ﻿// LedSetCmd.cs
+using System;
 using System.Collections.Generic;
 using System.Text;
 using Flower.Core.Abstractions.Commands;
 using Flower.Core.Enums;
 using Flower.Core.Models;
-using Flower.Core.Utilities;
 
 namespace Flower.Core.Cmds.BuiltIn
 {
@@ -23,16 +23,24 @@ namespace Flower.Core.Cmds.BuiltIn
         private static readonly FlowerCategory[] _supported =
         {
             FlowerCategory.SmallTulip,
+            FlowerCategory.BigTulip,
+            FlowerCategory.Any
         };
         public IReadOnlyCollection<FlowerCategory> SupportedCategories => _supported;
 
         public void ValidateArgs(FlowerCategory category, IReadOnlyDictionary<string, object?> args)
         {
+            // Plan (pseudocode):
+            // 1. Ensure `args` is not null -> throw ArgumentNullException.
+            // 2. Ensure dictionary contains key "intensity" and its value is non-null -> throw ArgumentException if missing.
+            // 3. Ensure value is an int -> throw ArgumentException if not.
+            // 4. Validate range 0..255 inclusive -> throw ArgumentOutOfRangeException if outside range.
             if (args is null) throw new ArgumentNullException(nameof(args));
-            if (!args.ContainsKey("intensity"))
+
+            if (!args.TryGetValue("intensity", out var raw) || raw is null)
                 throw new ArgumentException("Missing required argument: intensity");
 
-            if (!IntParser.TryGetInt(args["intensity"], out var intensity))
+            if (raw is not int intensity)
                 throw new ArgumentException("Argument 'intensity' must be an integer (0..255).");
 
             if (intensity < 0 || intensity > 255)

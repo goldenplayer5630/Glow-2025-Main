@@ -1,0 +1,6 @@
+2 is not working, probably max
+3 works
+4 is not working
+5 is not working, both TX and RX lights are flashing
+6 is not working
+7 probably broken, burned out yesterday,  both TX and RX lights are flashing
