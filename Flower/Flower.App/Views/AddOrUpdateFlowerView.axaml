@@ -7,128 +7,126 @@
     x:Class="Flower.App.Views.AddFlowerView"
     x:DataType="vm:IAddOrUpdateFlowerViewModel">
 
-  <!-- Tablet-friendly styles (aligned with MainView) -->
+  <!-- Compact styles for 800x480 -->
   <UserControl.Styles>
-    <!-- Buttons (kept in case you add inline OK/Cancel later) -->
+    <!-- Buttons (kept for future OK/Cancel) -->
     <Style Selector="Button">
-      <Setter Property="FontSize" Value="18"/>
-      <Setter Property="MinHeight" Value="48"/>
-      <Setter Property="MinWidth" Value="140"/>
-      <Setter Property="Padding" Value="16,10"/>
-      <Setter Property="CornerRadius" Value="8"/>
+      <Setter Property="FontSize" Value="14"/>
+      <Setter Property="MinHeight" Value="40"/>
+      <Setter Property="MinWidth" Value="110"/>
+      <Setter Property="Padding" Value="10,6"/>
+      <Setter Property="CornerRadius" Value="6"/>
       <Setter Property="HorizontalContentAlignment" Value="Center"/>
       <Setter Property="VerticalContentAlignment" Value="Center"/>
     </Style>
 
-      <Style Selector="StackPanel.form-cell">
-          <Setter Property="Orientation" Value="Vertical"/>
-          <Setter Property="Spacing" Value="6"/>
-          <Setter Property="Margin" Value="0,0,0,12"/>
-        </Style>
+    <Style Selector="StackPanel.form-cell">
+      <Setter Property="Orientation" Value="Vertical"/>
+      <Setter Property="Spacing" Value="6"/>
+      <Setter Property="Margin" Value="0,0,0,8"/>
+    </Style>
 
     <!-- ComboBox -->
     <Style Selector="ComboBox">
-      <Setter Property="FontSize" Value="18"/>
-      <Setter Property="MinHeight" Value="48"/>
-      <Setter Property="Padding" Value="12,8"/>
-      <Setter Property="MinWidth" Value="220"/>
+      <Setter Property="FontSize" Value="14"/>
+      <Setter Property="MinHeight" Value="40"/>
+      <Setter Property="Padding" Value="10,6"/>
+      <Setter Property="MinWidth" Value="180"/>
       <Setter Property="HorizontalContentAlignment" Value="Left"/>
       <Setter Property="VerticalContentAlignment" Value="Center"/>
     </Style>
 
     <!-- Header text -->
     <Style Selector="TextBlock.header">
-      <Setter Property="FontSize" Value="18"/>
+      <Setter Property="FontSize" Value="16"/>
       <Setter Property="FontWeight" Value="SemiBold"/>
-      <Setter Property="Margin" Value="0,0,0,6"/>
+      <Setter Property="Margin" Value="0,0,0,4"/>
     </Style>
 
     <!-- Larger TextBox for touch -->
     <Style Selector="TextBox">
-      <Setter Property="FontSize" Value="18"/>
-      <Setter Property="MinHeight" Value="48"/>
-      <Setter Property="Padding" Value="12,8"/>
+      <Setter Property="FontSize" Value="14"/>
+      <Setter Property="MinHeight" Value="40"/>
+      <Setter Property="Padding" Value="10,6"/>
     </Style>
 
     <!-- Form row helper -->
     <Style Selector="StackPanel.form-row">
       <Setter Property="Orientation" Value="Vertical"/>
       <Setter Property="Spacing" Value="6"/>
-      <Setter Property="Margin" Value="0,0,0,16"/>
+      <Setter Property="Margin" Value="0,0,0,12"/>
     </Style>
 
+    <!-- NumericUpDown -->
     <Style Selector="ac|NumericUpDown">
-        <Setter Property="FontSize" Value="18"/>
-        <Setter Property="MinHeight" Value="48"/>
-        <Setter Property="Padding" Value="12,8"/>
-        <Setter Property="MinWidth" Value="220"/>
+      <Setter Property="FontSize" Value="14"/>
+      <Setter Property="MinHeight" Value="40"/>
+      <Setter Property="Padding" Value="10,6"/>
+      <Setter Property="MinWidth" Value="180"/>
     </Style>
   </UserControl.Styles>
 
-<!-- Simple, compact 2-column form -->
-<Grid RowDefinitions="Auto,*,Auto,*,Auto" ColumnDefinitions="*,*"
-      Margin="16">
+  <!-- Simple, compact 2-column form -->
+  <Grid RowDefinitions="Auto,*,Auto,*,Auto" ColumnDefinitions="*,*" Margin="12">
 
-  <!-- Row 0: Id | Priority -->
-  <StackPanel Classes="form-cell" Grid.Row="0" Grid.Column="0" Margin="16,0,0,0">
-    <TextBlock Classes="header" Text="Flower Id"/>
-    <ac:NumericUpDown
-        Value="{Binding IdValue, Mode=TwoWay}"
-        Minimum="1"
-        Maximum="999"
-        Increment="1"
-        FormatString="0"
-        MinWidth="220"/>
-    <TextBlock Foreground="Tomato"
-               Text="{Binding IdError}"
-               IsVisible="{Binding HasIdError}"/>
-  </StackPanel>
+    <!-- Row 0: Id | Priority -->
+    <StackPanel Classes="form-cell" Grid.Row="0" Grid.Column="0" Margin="8,0,8,0">
+      <TextBlock Classes="header" Text="Flower Id"/>
+      <ac:NumericUpDown
+          Value="{Binding IdValue, Mode=TwoWay}"
+          Minimum="1"
+          Maximum="999"
+          Increment="1"
+          FormatString="0"
+          MinWidth="180"/>
+      <TextBlock Foreground="Tomato"
+                 Text="{Binding IdError}"
+                 IsVisible="{Binding HasIdError}"/>
+    </StackPanel>
 
-  <StackPanel Classes="form-cell" Grid.Row="0" Grid.Column="2" Margin="16,0,0,0">
-    <TextBlock Classes="header" Text="Priority"/>
-    <ac:NumericUpDown
-        Value="{Binding PriorityValue, Mode=TwoWay}"
-        Minimum="0"
-        Maximum="999"
-        Increment="1"
-        FormatString="0"
-        MinWidth="220"/>
-    <TextBlock Foreground="Tomato"
-               Text="{Binding PriorityError}"
-               IsVisible="{Binding HasPriorityError}"/>
-  </StackPanel>
+    <!-- FIX: Column=1 (grid has only two columns: 0 and 1) -->
+    <StackPanel Classes="form-cell" Grid.Row="0" Grid.Column="1" Margin="8,0,0,0">
+      <TextBlock Classes="header" Text="Priority"/>
+      <ac:NumericUpDown
+          Value="{Binding PriorityValue, Mode=TwoWay}"
+          Minimum="0"
+          Maximum="999"
+          Increment="1"
+          FormatString="0"
+          MinWidth="180"/>
+      <TextBlock Foreground="Tomato"
+                 Text="{Binding PriorityError}"
+                 IsVisible="{Binding HasPriorityError}"/>
+    </StackPanel>
 
-  <!-- Row 1: Category | Manual status override -->
-  <StackPanel Classes="form-cell" Grid.Row="1" Grid.Column="0" Margin="16,0,0,0">
-    <TextBlock Classes="header" Text="Category"/>
-    <ComboBox ItemsSource="{Binding CategoryItems}"
-              SelectedItem="{Binding SelectedCategory, Mode=TwoWay}"/>
-  </StackPanel>
+    <!-- Row 1: Category | Manual status override -->
+    <StackPanel Classes="form-cell" Grid.Row="1" Grid.Column="0" Margin="8,0,8,0">
+      <TextBlock Classes="header" Text="Category"/>
+      <ComboBox ItemsSource="{Binding CategoryItems}"
+                SelectedItem="{Binding SelectedCategory, Mode=TwoWay}"/>
+    </StackPanel>
 
-  <StackPanel Classes="form-cell" Grid.Row="1" Grid.Column="2" Margin="16,0,0,0">
-    <TextBlock Classes="header" Text="Manual status override"/>
-        <StackPanel Orientation="Horizontal" Spacing="12" VerticalAlignment="Center">
-          <ac:LayoutTransformControl>
-            <ac:LayoutTransformControl.LayoutTransform>
-              <ScaleTransform ScaleX="1.35" ScaleY="1.35"/>
-            </ac:LayoutTransformControl.LayoutTransform>
-            <ToggleSwitch
-              IsChecked="{Binding UseManualStatusOverride, Mode=TwoWay}"
-              Margin="0,0,8,0"/>
-          </ac:LayoutTransformControl>
+    <!-- FIX: Column=1 (and compact toggle) -->
+    <StackPanel Classes="form-cell" Grid.Row="1" Grid.Column="1" Margin="8,0,0,0">
+      <TextBlock Classes="header" Text="Manual status override"/>
+      <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+        <!-- Removed extra scale to save space on 800x480 -->
+        <ToggleSwitch
+          IsChecked="{Binding UseManualStatusOverride, Mode=TwoWay}"
+          Margin="0,0,8,0"/>
+        <ComboBox
+          ItemsSource="{Binding StatusItems}"
+          SelectedItem="{Binding SelectedStatus, Mode=TwoWay}"
+          IsEnabled="{Binding UseManualStatusOverride}"
+          MinWidth="160"/>
+      </StackPanel>
+    </StackPanel>
 
-          <ComboBox
-            ItemsSource="{Binding StatusItems}"
-            SelectedItem="{Binding SelectedStatus, Mode=TwoWay}"
-            IsEnabled="{Binding UseManualStatusOverride}"
-            MinWidth="180"/>
-        </StackPanel>
-  </StackPanel>
-
-  <!-- Row 2: Validation summary spans both columns -->
-  <TextBlock Grid.Row="2" Grid.ColumnSpan="2"
-             Foreground="Tomato"
-             Text="{Binding FormError}"
-             IsVisible="{Binding HasFormError}"/>
-</Grid>
+    <!-- Row 2: Validation summary spans both columns -->
+    <TextBlock Grid.Row="2" Grid.ColumnSpan="2"
+               Foreground="Tomato"
+               Text="{Binding FormError}"
+               IsVisible="{Binding HasFormError}"
+               Margin="0,4,0,0"/>
+  </Grid>
 </UserControl>

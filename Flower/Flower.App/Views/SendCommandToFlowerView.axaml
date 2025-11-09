@@ -3,51 +3,64 @@
              xmlns:viewmodel="clr-namespace:Flower.App.ViewModels"
              xmlns:core="clr-namespace:Flower.Core.Records;assembly=Flower.Core"
              xmlns:models="clr-namespace:Flower.Core.Models;assembly=Flower.Core"
+             xmlns:ac="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls"
              x:Class="Flower.App.Views.SendCommandToFlowerView"
              x:DataType="viewmodel:SendCommandToFlowerViewModel">
 
-    <UserControl.Styles>
-            <!-- Buttons -->
-            <Style Selector="Button">
-              <Setter Property="FontSize" Value="18"/>
-              <Setter Property="MinHeight" Value="56"/>
-              <Setter Property="MinWidth" Value="140"/>
-              <Setter Property="Padding" Value="16,10"/>
-              <Setter Property="CornerRadius" Value="8"/>
-              <Setter Property="HorizontalContentAlignment" Value="Center"/>
-              <Setter Property="VerticalContentAlignment" Value="Center"/>
-            </Style>
+  <!-- Compact styles for 800x480 -->
+  <UserControl.Styles>
+    <!-- Buttons -->
+    <Style Selector="Button">
+      <Setter Property="FontSize" Value="14"/>
+      <Setter Property="MinHeight" Value="40"/>
+      <Setter Property="MinWidth" Value="110"/>
+      <Setter Property="Padding" Value="10,6"/>
+      <Setter Property="CornerRadius" Value="6"/>
+      <Setter Property="HorizontalContentAlignment" Value="Center"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
 
-            <!-- ComboBox -->
-            <Style Selector="ComboBox">
-              <Setter Property="FontSize" Value="18"/>
-              <Setter Property="MinHeight" Value="48"/>
-              <Setter Property="Padding" Value="12,8"/>
-              <Setter Property="MinWidth" Value="220"/>
-              <Setter Property="VerticalContentAlignment" Value="Center"/>
-            </Style>
-    </UserControl.Styles>
+    <!-- ComboBox -->
+    <Style Selector="ComboBox">
+      <Setter Property="FontSize" Value="14"/>
+      <Setter Property="MinHeight" Value="40"/>
+      <Setter Property="Padding" Value="10,6"/>
+      <Setter Property="MinWidth" Value="180"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
 
-  <Grid RowDefinitions="Auto,*,Auto,*,Auto,*,Auto"
-        ColumnDefinitions="160,*"
-        Margin="16">
+    <!-- NumericUpDown -->
+    <Style Selector="ac|NumericUpDown">
+      <Setter Property="FontSize" Value="14"/>
+      <Setter Property="MinHeight" Value="40"/>
+      <Setter Property="Padding" Value="10,6"/>
+      <Setter Property="MinWidth" Value="120"/>
+    </Style>
 
-    <!-- Header -->
-    <TextBlock Grid.Row="0" Grid.ColumnSpan="2"
-               Text="{Binding HeaderText}"
-               FontSize="20" FontWeight="SemiBold"
-               Margin="0,0,0,12"/>
+    <!-- Small headers -->
+    <Style Selector="TextBlock.header">
+      <Setter Property="FontSize" Value="16"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+  </UserControl.Styles>
+
+  <Grid RowDefinitions="Auto,Auto,Auto"
+        ColumnDefinitions="120,*"
+        Margin="12">
 
     <!-- Command selector -->
-    <TextBlock Grid.Row="2" Grid.Column="0"
-               Text="Command:" Margin="0,0,12,0"
+    <TextBlock Grid.Row="0" Grid.Column="0"
+               Text="Command:"
+               Margin="0,0,8,0"
                VerticalAlignment="Center"/>
-    <ComboBox Grid.Row="2" Grid.Column="1"
+    <ComboBox Grid.Row="0" Grid.Column="1"
+              FontSize="12"
               ItemsSource="{Binding CommandOptions}"
               SelectedItem="{Binding SelectedCommand}"
-              MinWidth="280">
+              MinWidth="200"
+              Margin="0,0,0,8">
       <ComboBox.ItemTemplate>
-        <!-- NOTE: CommandOption is in Flower.Core.Records -->
+        <!-- CommandOption is in Flower.Core.Records -->
         <DataTemplate x:DataType="core:CommandOption">
           <TextBlock Text="{Binding Title}"/>
         </DataTemplate>
@@ -55,22 +68,28 @@
     </ComboBox>
 
     <!-- Arguments -->
-    <TextBlock Grid.Row="4" Grid.Column="0"
-               Text="Arguments:" Margin="0,8,12,0"
+    <TextBlock Grid.Row="1" Grid.Column="0"
+               Text="Arguments:"
+               Margin="0,8,8,0"
                VerticalAlignment="Top"/>
-    <Border Grid.Row="4" Grid.Column="1"
+    <Border Grid.Row="1" Grid.Column="1"
             Padding="8" CornerRadius="8"
-            BorderBrush="#DDD" BorderThickness="1">
+            BorderBrush="#DDD" BorderThickness="1"
+            Margin="0,0,0,8">
       <ItemsControl ItemsSource="{Binding ArgEntries}">
         <ItemsControl.ItemTemplate>
-          <!-- NOTE: ArgEntry is in Flower.Core.Models -->
+          <!-- ArgEntry is in Flower.Core.Models -->
           <DataTemplate x:DataType="models:ArgEntry">
-            <Grid ColumnDefinitions="*,160" Margin="0,6,0,0">
-              <TextBlock Grid.Column="0" Text="{Binding Name}" VerticalAlignment="Center" Margin="0,0,12,0"/>
-              <NumericUpDown Grid.Column="1"
-                             Value="{Binding Value}"
-                             Minimum="0" Maximum="1000000" Increment="1"
-                             Width="160" HorizontalAlignment="Left"/>
+            <Grid ColumnDefinitions="*,120" Margin="0,6,0,0">
+              <TextBlock Grid.Column="0"
+                         Text="{Binding Name}"
+                         VerticalAlignment="Center"
+                         Margin="0,0,8,0"/>
+              <ac:NumericUpDown Grid.Column="1"
+                                Value="{Binding Value}"
+                                Minimum="0" Maximum="1000000" Increment="1"
+                                Width="120"
+                                HorizontalAlignment="Left"/>
             </Grid>
           </DataTemplate>
         </ItemsControl.ItemTemplate>
@@ -78,12 +97,15 @@
     </Border>
 
     <!-- JSON preview -->
-    <TextBlock Grid.Row="6" Grid.Column="0"
-               Text="JSON preview:" Margin="0,8,12,0"
+    <TextBlock Grid.Row="2" Grid.Column="0"
+               Text="JSON preview:"
+               Margin="0,8,8,0"
                VerticalAlignment="Top"/>
-    <TextBox Grid.Row="6" Grid.Column="1"
+    <TextBox Grid.Row="2" Grid.Column="1"
              Text="{Binding ArgsJson}"
-             IsReadOnly="True" AcceptsReturn="True"
-             Height="100" />
+             IsReadOnly="True"
+             AcceptsReturn="True"
+             Height="80"
+             Margin="0,0,0,8"/>
   </Grid>
 </UserControl>

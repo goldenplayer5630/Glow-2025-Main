@@ -48,8 +48,8 @@ namespace Flower.App.Windows
 
             HookInteractions(vm);
 
-            Width = MinWidth = MaxWidth = 1280;
-            Height = MinHeight = MaxHeight = 800;
+            Width = MinWidth = MaxWidth = 800;
+            Height = MinHeight = MaxHeight = 480;
             WindowStartupLocation = WindowStartupLocation.CenterScreen;
         }
 

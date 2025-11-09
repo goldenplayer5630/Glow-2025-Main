@@ -6,18 +6,19 @@
     x:Class="Flower.App.Windows.LoadShowWindow"
     x:DataType="vm:ILoadShowViewModel"
     Title="Load Show"
-    Width="760" Height="360"
-    MinWidth="760" MinHeight="360"
-    MaxWidth="760" MaxHeight="360"
-    CanResize="False">
+    Width="600" Height="300"
+    MinWidth="600" MinHeight="300"
+    MaxWidth="600" MaxHeight="300"
+    CanResize="False"
+    WindowStartupLocation="CenterOwner">
 
     <Window.Styles>
-      <Style Selector="Button">
-      <Setter Property="FontSize" Value="18"/>
-      <Setter Property="MinHeight" Value="56"/>
-      <Setter Property="MinWidth" Value="140"/>
-      <Setter Property="Padding" Value="16,10"/>
-      <Setter Property="CornerRadius" Value="8"/>
+    <Style Selector="Button">
+      <Setter Property="FontSize" Value="14"/>
+      <Setter Property="MinHeight" Value="40"/>
+      <Setter Property="MinWidth" Value="110"/>
+      <Setter Property="Padding" Value="10,6"/>
+      <Setter Property="CornerRadius" Value="6"/>
       <Setter Property="HorizontalContentAlignment" Value="Center"/>
       <Setter Property="VerticalContentAlignment" Value="Center"/>
     </Style>

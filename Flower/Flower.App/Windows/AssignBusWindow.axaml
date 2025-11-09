@@ -4,20 +4,20 @@
         xmlns:views="clr-namespace:Flower.App.Views"
         x:Class="Flower.App.Windows.AssignBusWindow"
         Title="Manage Buses"
-        Width="460" Height="240"
-        MinWidth="460" MinHeight="240"
-        MaxWidth="460" MaxHeight="240"
+        Width="400" Height="200"
+        MinWidth="400" MinHeight="200"
+        MaxWidth="400" MaxHeight="200"
         CanResize="False"
         WindowStartupLocation="CenterOwner">
 
   <!-- Tablet-friendly buttons (match MainView) -->
   <Window.Styles>
     <Style Selector="Button">
-      <Setter Property="FontSize" Value="18"/>
-      <Setter Property="MinHeight" Value="56"/>
-      <Setter Property="MinWidth" Value="140"/>
-      <Setter Property="Padding" Value="16,10"/>
-      <Setter Property="CornerRadius" Value="8"/>
+      <Setter Property="FontSize" Value="14"/>
+      <Setter Property="MinHeight" Value="40"/>
+      <Setter Property="MinWidth" Value="110"/>
+      <Setter Property="Padding" Value="10,6"/>
+      <Setter Property="CornerRadius" Value="6"/>
       <Setter Property="HorizontalContentAlignment" Value="Center"/>
       <Setter Property="VerticalContentAlignment" Value="Center"/>
     </Style>
