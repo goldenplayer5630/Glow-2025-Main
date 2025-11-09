@@ -139,7 +139,7 @@
           <TextBox Text="{Binding MonitorText}"
                    AcceptsReturn="True"
                    IsReadOnly="True"
-                   FontSize="16"
+                   FontSize="12"
                    ScrollViewer.VerticalScrollBarVisibility="Auto"
                    util:AutoScrollBehavior.AutoScrollToEnd="True"/>
         </Border>

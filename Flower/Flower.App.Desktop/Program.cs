@@ -92,7 +92,7 @@ public static class Program
                 s.AddTransient<IAddOrUpdateFlowerViewModel, AddOrUpdateFlowerViewModel>();
                 s.AddTransient<IManageBusesViewModel, ManageBusesViewModel>();
                 s.AddTransient<IAssignBusViewModel, AssignBusViewModel>();
-                s.AddTransient<ILoadFlowerViewModel, LoadFlowerViewModel>();
+                s.AddTransient<ILoadShowViewModel, LoadShowViewModel>();
 
                 // ============ Views / Windows ============
                 s.AddTransient<ShowCreatorWindow>();
@@ -100,7 +100,7 @@ public static class Program
                 s.AddTransient<ManageBusesWindow>();
                 s.AddTransient<AssignBusWindow>();
                 s.AddTransient<SendCommandToFlowerWindow>();
-                s.AddTransient<LoadFlowersWindow>();
+                s.AddTransient<LoadShowWindow>();
                 s.AddTransient<MainWindow>();
 
                 // ============ Factories ============
@@ -109,7 +109,6 @@ public static class Program
                 s.AddTransient<Func<ManageBusesWindow>>(sp => () => sp.GetRequiredService<ManageBusesWindow>());
                 s.AddTransient<Func<AssignBusWindow>>(sp => () => sp.GetRequiredService<AssignBusWindow>());
                 s.AddTransient<Func<SendCommandToFlowerWindow>>(sp => () => sp.GetRequiredService<SendCommandToFlowerWindow>());
-                s.AddTransient<Func<LoadFlowersWindow>>(sp => () => sp.GetRequiredService<LoadFlowersWindow>());
 
                 // ============ Cross-cutting ============
                 s.AddSingleton<IUiLogService, UiLogService>();

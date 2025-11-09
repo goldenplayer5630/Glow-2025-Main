@@ -2,6 +2,7 @@
 using Flower.App.ViewModels;
 using Flower.App.Windows;
 using Flower.Core.Abstractions.Services;
+using Flower.Core.Abstractions.Stores;
 using Flower.Core.Models;
 using System;
 using System.Collections.Generic;
@@ -16,8 +17,8 @@ namespace Flower.App.Windows
         private readonly Func<AddFlowerWindow> _addOrUpdateFlowerWindowFactory;
         private readonly Func<ManageBusesWindow> _manageBusesWindowFactory;
         private readonly Func<SendCommandToFlowerWindow> _sendCommandToFlowerWindowFactory;
-        private readonly Func<LoadFlowersWindow> _loadFlowersWindowFactory = () => new LoadFlowersWindow();
         private readonly IBusConfigService _busCfg;
+        private readonly IShowProjectStore _showStore;
 
         public MainWindow()
         {
@@ -33,8 +34,8 @@ namespace Flower.App.Windows
             Func<AddFlowerWindow> addFlowerWindowFactory,
             Func<ManageBusesWindow> manageBusesWindowFactory,
             Func<SendCommandToFlowerWindow> sendCommandToFlowerWindowFactory,
-            Func<LoadFlowersWindow> loadFlowersWindowFactory,
-            IBusConfigService busCfg
+            IBusConfigService busCfg,
+            IShowProjectStore showStore
         ) : this()
         {
             DataContext = vm;
@@ -42,8 +43,8 @@ namespace Flower.App.Windows
             _addOrUpdateFlowerWindowFactory = addFlowerWindowFactory;
             _manageBusesWindowFactory = manageBusesWindowFactory;
             _sendCommandToFlowerWindowFactory = sendCommandToFlowerWindowFactory;
-            _loadFlowersWindowFactory = loadFlowersWindowFactory;
             _busCfg = busCfg;
+            _showStore = showStore ?? throw new ArgumentNullException(nameof(showStore));
 
             HookInteractions(vm);
 
@@ -144,33 +145,21 @@ namespace Flower.App.Windows
                 ctx.SetOutput(result);
             });
 
-
             vm.LoadShowInteraction.RegisterHandler(async ctx =>
             {
-                var win = _loadFlowersWindowFactory();
+                if (_showStore is null)
+                    throw new InvalidOperationException("MainWindow has no IShowProjectStore.");
 
-                if (win.DataContext is ILoadFlowerViewModel lvm)
-                {
-                    // Option A: let the VM use its own default
-                    await lvm.InitAsync();
+                var vmLoad = new LoadShowViewModel(_showStore, this);   // <-- non-null
+                var win = new LoadShowWindow { DataContext = vmLoad };
 
-                    // Option B: enforce the showprojects folder explicitly
-                    // await lvm.InitAsync(ShowProjectStore.DefaultFolder);
-                }
-
-                if (win.DataContext is LoadFlowerViewModel strongVm)
-                {
-                    void Handler(object? _, ShowProject? project)
-                    {
-                        strongVm.CloseRequested -= Handler;
-                        win.Close(project);
-                    }
-                    strongVm.CloseRequested += Handler;
-                }
+                await vmLoad.InitAsync(); // optional: pass a known folder
 
                 var result = await win.ShowDialog<ShowProject?>(this);
                 ctx.SetOutput(result);
             });
+
+
         }
     }
 }

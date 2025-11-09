@@ -1,0 +1,35 @@
+<UserControl
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vm="clr-namespace:Flower.App.ViewModels"
+    mc:Ignorable="d"
+    x:Class="Flower.App.Views.LoadShowView"
+    x:DataType="vm:ILoadShowViewModel">
+
+  <Border Padding="16">
+    <Grid RowDefinitions="Auto,*">
+      <!-- Header -->
+      <StackPanel Spacing="8">
+        <TextBlock Text="Select a show to load" FontSize="18" FontWeight="SemiBold"/>
+        <TextBlock Text="{Binding FolderHint}" Opacity="0.7"/>
+      </StackPanel>
+
+      <!-- List -->
+      <ListBox Grid.Row="1"
+               ItemsSource="{Binding Shows}"
+               SelectedItem="{Binding SelectedShow, Mode=TwoWay}"
+               Margin="0,12,0,0">
+        <ListBox.ItemTemplate>
+          <DataTemplate>
+            <StackPanel Orientation="Vertical" Margin="6">
+              <TextBlock Text="{Binding DisplayName}" FontWeight="SemiBold"/>
+              <TextBlock Text="{Binding Path}" FontSize="12" Opacity="0.65"/>
+            </StackPanel>
+          </DataTemplate>
+        </ListBox.ItemTemplate>
+      </ListBox>
+    </Grid>
+  </Border>
+</UserControl>

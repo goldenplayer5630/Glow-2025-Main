@@ -1,4 +1,5 @@
 ﻿using Flower.Core.Abstractions.Stores;
+using Flower.Infrastructure.Converters;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
 using Newtonsoft.Json.Serialization;
@@ -13,9 +14,7 @@ namespace Flower.Infrastructure.Persistence
         {
             Formatting = Newtonsoft.Json.Formatting.Indented,
             NullValueHandling = NullValueHandling.Ignore,
-            // Avoid accidental date parsing of strings; keep them as string
             DateParseHandling = DateParseHandling.None,
-            // Parse numbers as double/long primitives (not JValue)
             FloatParseHandling = FloatParseHandling.Double,
             ContractResolver = new DefaultContractResolver
             {
@@ -31,8 +30,11 @@ namespace Flower.Infrastructure.Persistence
 
         protected JsonStoreBase()
         {
-            // Enum → "camelCase" strings
+            // Prefer string enums (camelCase)
             Settings.Converters.Add(new StringEnumConverter(new CamelCaseNamingStrategy(), allowIntegerValues: true));
+
+            Settings.Converters.Insert(0, new PreferInt32ObjectConverter());
+
             Directory.CreateDirectory(Folder);
         }
 

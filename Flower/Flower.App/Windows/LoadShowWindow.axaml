@@ -1,0 +1,38 @@
+<Window
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:views="clr-namespace:Flower.App.Views"
+    xmlns:vm="clr-namespace:Flower.App.ViewModels"
+    x:Class="Flower.App.Windows.LoadShowWindow"
+    x:DataType="vm:ILoadShowViewModel"
+    Title="Load Show"
+    Width="760" Height="360"
+    MinWidth="760" MinHeight="360"
+    MaxWidth="760" MaxHeight="360"
+    CanResize="False">
+
+    <Window.Styles>
+      <Style Selector="Button">
+      <Setter Property="FontSize" Value="18"/>
+      <Setter Property="MinHeight" Value="56"/>
+      <Setter Property="MinWidth" Value="140"/>
+      <Setter Property="Padding" Value="16,10"/>
+      <Setter Property="CornerRadius" Value="8"/>
+      <Setter Property="HorizontalContentAlignment" Value="Center"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+  </Window.Styles>
+
+  <Grid RowDefinitions="*,Auto">
+    <views:LoadShowView Grid.Row="0"/>
+
+    <Border Grid.Row="1" Padding="16,12">
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="8">
+        <Button Content="Refresh" Command="{Binding RefreshCommand}" />
+        <Button Content="Browse..." Command="{Binding BrowseFolderCommand}" />
+        <Button Content="Cancel" Command="{Binding CancelCommand}" IsCancel="True"/>
+        <Button Content="Load" Command="{Binding LoadCommand}" IsDefault="True" IsEnabled="{Binding CanLoad}"/>
+      </StackPanel>
+    </Border>
+  </Grid>
+</Window>
