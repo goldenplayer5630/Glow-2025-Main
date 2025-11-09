@@ -12,7 +12,7 @@ namespace Flower.Core.Cmds.BuiltIn
     public sealed class LedRampOutCmd : IFlowerCommand
     {
         public string Id => "led.ramp.out";
-        public string DisplayName => "LED ramp inner";
+        public string DisplayName => "LED ramp outer";
 
         public IReadOnlyDictionary<string, object?>? args => _args;
         private static readonly IReadOnlyDictionary<string, object?> _args =
