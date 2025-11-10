@@ -1,8 +1,10 @@
 ﻿using System;
+using System.Linq;                    // <-- added
 using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Controls.ApplicationLifetimes;
+using Avalonia.Input;                 // <-- added (for Cursor)
 using Avalonia.Markup.Xaml;
 using Avalonia.Threading;
 using Flower.App.Windows;            // MainWindow
@@ -56,6 +58,11 @@ namespace Flower.App
                     await Dispatcher.UIThread.InvokeAsync(() =>
                     {
                         var window = ActivatorUtilities.CreateInstance<MainWindow>(_host.Services);
+
+                        // Apply kiosk/fullscreen if requested
+                        if (IsKioskRequested())
+                            ApplyKiosk(window);
+
                         desktop.MainWindow = window;
                         window.Show();
                     });
@@ -66,6 +73,10 @@ namespace Flower.App
                     await Dispatcher.UIThread.InvokeAsync(() =>
                     {
                         var window = new MainWindow();
+
+                        if (IsKioskRequested())
+                            ApplyKiosk(window);
+
                         desktop.MainWindow = window;
                         window.Show();
                     });
@@ -85,6 +96,10 @@ namespace Flower.App
                             Text = "Startup failed:\n\n" + ex
                         }
                     };
+
+                    if (IsKioskRequested())
+                        ApplyKiosk(error);
+
                     desktop.MainWindow = error;
                     error.Show();
                 });
@@ -106,6 +121,7 @@ namespace Flower.App
                         // Prefer a UserControl for single-view lifetimes.
                         var mainView = ActivatorUtilities.CreateInstance<MainView>(_host.Services);
                         single.MainView = mainView;
+                        // Note: kiosk is a desktop-window concern; single-view has no window chrome to hide.
                     });
                 }
                 else
@@ -128,6 +144,33 @@ namespace Flower.App
                     };
                 });
             }
+        }
+
+        // ===== Helpers =====
+        private static bool IsKioskRequested()
+        {
+            var args = Environment.GetCommandLineArgs();
+            return args.Any(a => string.Equals(a, "--kiosk", StringComparison.OrdinalIgnoreCase)
+                              || string.Equals(a, "--fullscreen", StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static bool HideCursorRequested()
+        {
+            var args = Environment.GetCommandLineArgs();
+            return args.Any(a => string.Equals(a, "--hide-cursor", StringComparison.OrdinalIgnoreCase));
+        }
+
+        private static void ApplyKiosk(Window win)
+        {
+            // Borderless, always-on-top, fullscreen
+            win.SystemDecorations = SystemDecorations.None;
+            win.CanResize = false;
+            win.Topmost = true;
+            win.ShowInTaskbar = false;
+            win.WindowState = WindowState.FullScreen;
+
+            if (HideCursorRequested())
+                win.Cursor = new Cursor(StandardCursorType.None);
         }
     }
 }
