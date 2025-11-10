@@ -1,0 +1,84 @@
+{
+  "version": 1,
+  "title": "Big Flower",
+  "projectId": "big-flower-pulse-long",
+  "tracks": [
+    {
+      "name": "big.flower",
+      "events": [
+        { "atMs": 0, "event": { "priority": 1, "cmdId": "rgb.inner", "args": { "r": 0, "g": 0, "b": 255 } } },
+        { "atMs": 0, "event": { "priority": 1, "cmdId": "rgb.outer", "args": { "r": 255, "g": 0, "b": 100 } } },
+        { "atMs": 0, "event": { "priority": 1, "cmdId": "led.set", "args": { "intensity": 0 } } },
+
+        { "atMs": 0,    "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 70, "durationMs": 1100 } } },
+        { "atMs": 1100, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 70, "durationMs": 1100 } } },
+        { "atMs": 2400, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 10, "durationMs": 700 } } },
+        { "atMs": 3200, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 10, "durationMs": 700 } } },
+
+        { "atMs": 6000,  "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 70, "durationMs": 1100 } } },
+        { "atMs": 7200,  "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 70, "durationMs": 1100 } } },
+        { "atMs": 8400,  "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 10, "durationMs": 700 } } },
+        { "atMs": 9200,  "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 10, "durationMs": 700 } } },
+
+        { "atMs": 11000, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 70, "durationMs": 1100 } } },
+        { "atMs": 13200, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 70, "durationMs": 1100 } } },
+        { "atMs": 14400, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 10, "durationMs": 700 } } },
+        { "atMs": 15200, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 10, "durationMs": 700 } } },
+
+        { "atMs": 17000, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 70, "durationMs": 1100 } } },
+        { "atMs": 19200, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 70, "durationMs": 1100 } } },
+        { "atMs": 20400, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 10, "durationMs": 700 } } },
+        { "atMs": 21100, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 10, "durationMs": 700 } } },
+
+        { "atMs": 24000, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 70, "durationMs": 1100 } } },
+        { "atMs": 25200, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 70, "durationMs": 1100 } } },
+        { "atMs": 26400, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 10, "durationMs": 700 } } },
+        { "atMs": 27200, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 10, "durationMs": 700 } } },
+
+        { "atMs": 30000, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 70, "durationMs": 1100 } } },
+        { "atMs": 31100, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 70, "durationMs": 1100 } } },
+        { "atMs": 32400, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 10, "durationMs": 700 } } },
+        { "atMs": 33200, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 10, "durationMs": 700 } } },
+
+        { "atMs": 36000, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 70, "durationMs": 1100 } } },
+        { "atMs": 37200, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 70, "durationMs": 1100 } } },
+        { "atMs": 38400, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 10, "durationMs": 700 } } },
+        { "atMs": 39200, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 10, "durationMs": 700 } } },
+
+        { "atMs": 42000, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 70, "durationMs": 1100 } } },
+        { "atMs": 43200, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 70, "durationMs": 1100 } } },
+        { "atMs": 44400, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 10, "durationMs": 700 } } },
+        { "atMs": 45200, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 10, "durationMs": 700 } } },
+
+        { "atMs": 47000, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 70, "durationMs": 1100 } } },
+        { "atMs": 49200, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 70, "durationMs": 1100 } } },
+        { "atMs": 70400, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 10, "durationMs": 700 } } },
+        { "atMs": 51100, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 10, "durationMs": 700 } } },
+
+        { "atMs": 54000, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 70, "durationMs": 1100 } } },
+        { "atMs": 55200, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 70, "durationMs": 1100 } } },
+        { "atMs": 56400, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 10, "durationMs": 700 } } },
+        { "atMs": 57200, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 10, "durationMs": 700 } } },
+
+        { "atMs": 60000, "event": { "priority": 1, "cmdId": "motor.open", "args": { } } },
+        { "atMs": 60000, "event": { "priority": 1, "cmdId": "led.ramp.in", "args": { "endIntensity": 40, "durationMs": 1700 } } },
+        { "atMs": 61700, "event": { "priority": 1, "cmdId": "led.ramp.out","args": { "endIntensity": 40, "durationMs": 1700 } } },
+
+        { "atMs": 77000, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 70, "durationMs": 1100 } } },
+        { "atMs": 76200, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 70, "durationMs": 1100 } } },
+        { "atMs": 77400, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 40, "durationMs": 700 } } },
+        { "atMs": 78200, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 40, "durationMs": 700 } } },
+
+        { "atMs": 90000, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 70, "durationMs": 1100 } } },
+        { "atMs": 91100, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 70, "durationMs": 1100 } } },
+        { "atMs": 92400, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 40, "durationMs": 700 } } },
+        { "atMs": 93200, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 40, "durationMs": 700 } } },
+
+        { "atMs": 240000, "event": { "priority": 1, "cmdId": "motor.close", "args": { } } },
+        { "atMs": 240000, "event": { "priority": 1, "cmdId": "led.ramp", "args": { "endIntensity": 0, "durationMs": 1700 } } }
+      ],
+      "loopMs": 360000
+    }
+  ],
+  "repeat": true
+}

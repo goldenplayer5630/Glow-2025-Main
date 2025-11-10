@@ -1,0 +1,74 @@
+{
+  "version": 1,
+  "title": "Big Flower (Short)",
+  "projectId": "big-flower-pulse-short",
+  "tracks": [
+    {
+      "name": "big.flower",
+      "events": [
+        { "atMs": 0,     "event": { "priority": 1, "cmdId": "rgb.inner", "args": { "r": 0, "g": 0, "b": 255 } } },
+        { "atMs": 0,     "event": { "priority": 1, "cmdId": "rgb.outer", "args": { "r": 255, "g": 0, "b": 100 } } },
+        { "atMs": 0,     "event": { "priority": 1, "cmdId": "led.set",   "args": { "intensity": 0 } } },
+        { "atMs": 0,     "event": { "priority": 1, "cmdId": "motor.close", "args": { } } },
+
+        { "atMs": 60000, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 70, "durationMs": 1000 } } },
+        { "atMs": 61000, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 70, "durationMs": 1000 } } },
+        { "atMs": 62200, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 10, "durationMs": 600 } } },
+        { "atMs": 62900, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 10, "durationMs": 600 } } },
+
+        { "atMs": 66000, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 70, "durationMs": 1000 } } },
+        { "atMs": 67100, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 70, "durationMs": 1000 } } },
+        { "atMs": 68200, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 10, "durationMs": 600 } } },
+        { "atMs": 68900, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 10, "durationMs": 600 } } },
+
+        { "atMs": 72000, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 70, "durationMs": 1000 } } },
+        { "atMs": 73100, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 70, "durationMs": 1000 } } },
+        { "atMs": 74200, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 10, "durationMs": 600 } } },
+        { "atMs": 74900, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 10, "durationMs": 600 } } },
+
+        { "atMs": 78000, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 70, "durationMs": 1000 } } },
+        { "atMs": 79100, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 70, "durationMs": 1000 } } },
+        { "atMs": 80200, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 10, "durationMs": 600 } } },
+        { "atMs": 80900, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 10, "durationMs": 600 } } },
+
+        { "atMs": 84000, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 70, "durationMs": 1000 } } },
+        { "atMs": 85100, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 70, "durationMs": 1000 } } },
+        { "atMs": 86200, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 10, "durationMs": 600 } } },
+        { "atMs": 86900, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 10, "durationMs": 600 } } },
+
+        { "atMs": 90000, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 70, "durationMs": 1000 } } },
+        { "atMs": 91000, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 70, "durationMs": 1000 } } },
+        { "atMs": 92200, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 10, "durationMs": 600 } } },
+        { "atMs": 92900, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 10, "durationMs": 600 } } },
+
+        { "atMs": 96000, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 70, "durationMs": 1000 } } },
+        { "atMs": 97100, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 70, "durationMs": 1000 } } },
+        { "atMs": 98200, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 10, "durationMs": 600 } } },
+        { "atMs": 98900, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 10, "durationMs": 600 } } },
+
+        { "atMs": 102000, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 70, "durationMs": 1000 } } },
+        { "atMs": 103100, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 70, "durationMs": 1000 } } },
+        { "atMs": 104200, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 10, "durationMs": 600 } } },
+        { "atMs": 104900, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 10, "durationMs": 600 } } },
+
+        { "atMs": 108000, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 70, "durationMs": 1000 } } },
+        { "atMs": 109100, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 70, "durationMs": 1000 } } },
+        { "atMs": 110200, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 10, "durationMs": 600 } } },
+        { "atMs": 110900, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 10, "durationMs": 600 } } },
+
+        { "atMs": 114000, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 70, "durationMs": 1000 } } },
+        { "atMs": 115100, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 70, "durationMs": 1000 } } },
+        { "atMs": 116200, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 10, "durationMs": 600 } } },
+        { "atMs": 116900, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 10, "durationMs": 600 } } },
+
+        { "atMs": 120000, "event": { "priority": 1, "cmdId": "motor.open", "args": { } } },
+        { "atMs": 120000, "event": { "priority": 1, "cmdId": "led.ramp.in", "args": { "endIntensity": 120, "durationMs": 1600 } } },
+
+        { "atMs": 209000, "event": { "priority": 1, "cmdId": "motor.close", "args": { } } },
+        { "atMs": 209000, "event": { "priority": 1, "cmdId": "led.ramp",    "args": { "endIntensity": 0, "durationMs": 1000 } } }
+      ],
+      "loopMs": 210000
+    }
+  ],
+  "repeat": true
+}
