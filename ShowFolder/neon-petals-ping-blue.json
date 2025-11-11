@@ -56,7 +56,7 @@
   
           { "atMs": 150000, "event": { "priority": 1, "cmdId": "led.ramp",   "args": { "endIntensity": 0,  "durationMs": 6000 } } }
         ],
-        "loopMs": 180000
+        "loopMs": 200000
       }
     ],
     "repeat": true

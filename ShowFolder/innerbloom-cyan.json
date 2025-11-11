@@ -1,69 +1,68 @@
 {
-    "version": 1,
-    "title": "Innerbloom – Two Blooms",
-    "projectId": "innerbloom-two-blooms",
-    "tracks": [
-      {
-        "name": "big.flower",
-        "events": [
-          { "atMs": 0,       "event": { "priority": 1, "cmdId": "rgb.inner", "args": { "r": 0,   "g": 128, "b": 255 } } },
-          { "atMs": 0,       "event": { "priority": 1, "cmdId": "rgb.outer", "args": { "r": 255, "g": 0,   "b": 120 } } },
-          { "atMs": 0,       "event": { "priority": 1, "cmdId": "led.set",   "args": { "intensity": 0 } } },
-  
-          { "atMs": 0,       "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 18, "durationMs": 5000 } } },
-          { "atMs": 5000,    "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 0,  "durationMs": 5000 } } },
-          { "atMs": 10000,   "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 22, "durationMs": 5000 } } },
-          { "atMs": 15000,   "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 0,  "durationMs": 5000 } } },
-          { "atMs": 20000,   "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 26, "durationMs": 5000 } } },
-          { "atMs": 25000,   "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 0,  "durationMs": 5000 } } },
-          { "atMs": 30000,   "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 30, "durationMs": 5000 } } },
-          { "atMs": 35000,   "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 0,  "durationMs": 5000 } } },
+  "version": 1,
+  "title": "Innerbloom – Two Blooms (max 50)",
+  "projectId": "innerbloom-two-blooms",
+  "tracks": [
+    {
+      "name": "big.flower",
+      "events": [
+        { "atMs": 0,       "event": { "priority": 1, "cmdId": "rgb.inner", "args": { "r": 0,   "g": 128, "b": 255 } } },
+        { "atMs": 0,       "event": { "priority": 1, "cmdId": "rgb.outer", "args": { "r": 255, "g": 0,   "b": 120 } } },
+        { "atMs": 0,       "event": { "priority": 1, "cmdId": "led.set",   "args": { "intensity": 0 } } },
 
-          { "atMs": 60000,   "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 40, "durationMs": 2000 } } },
-          { "atMs": 62000,   "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 10, "durationMs": 2000 } } },
-          { "atMs": 80000,   "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 50, "durationMs": 1800 } } },
-          { "atMs": 81800,   "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 12, "durationMs": 1800 } } },
-          { "atMs": 100000,  "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 60, "durationMs": 1600 } } },
-          { "atMs": 101600,  "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 14, "durationMs": 1600 } } },
-          { "atMs": 120000,  "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 70, "durationMs": 1400 } } },
-          { "atMs": 121400,  "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 16, "durationMs": 1400 } } },
-          { "atMs": 140000,  "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 80, "durationMs": 1200 } } },
-          { "atMs": 141200,  "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 18, "durationMs": 1200 } } },
-          { "atMs": 155000,  "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 90, "durationMs": 1000 } } },
-          { "atMs": 156000,  "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 20, "durationMs": 1000 } } },
-  
-          { "atMs": 260000,  "event": { "priority": 1, "cmdId": "motor.open", "args": {} } },
-          { "atMs": 260000,  "event": { "priority": 1, "cmdId": "led.ramp.in", "args": { "endIntensity": 110, "durationMs": 2500 } } },
+        { "atMs": 0,       "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 18, "durationMs": 5000 } } },
+        { "atMs": 5000,    "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 0,  "durationMs": 5000 } } },
+        { "atMs": 10000,   "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 22, "durationMs": 5000 } } },
+        { "atMs": 15000,   "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 0,  "durationMs": 5000 } } },
+        { "atMs": 20000,   "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 26, "durationMs": 5000 } } },
+        { "atMs": 25000,   "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 0,  "durationMs": 5000 } } },
+        { "atMs": 30000,   "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 30, "durationMs": 5000 } } },
+        { "atMs": 35000,   "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 0,  "durationMs": 5000 } } },
 
-          { "atMs": 280000,  "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 85,  "durationMs": 1500 } } },
-          { "atMs": 281500,  "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 110, "durationMs": 1500 } } },
-          { "atMs": 300000,  "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 90,  "durationMs": 1500 } } },
-          { "atMs": 301500,  "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 110, "durationMs": 1500 } } },
-  
-          { "atMs": 330000,  "event": { "priority": 1, "cmdId": "motor.close", "args": {} } },
-          { "atMs": 330000,  "event": { "priority": 1, "cmdId": "led.ramp",    "args": { "endIntensity": 30, "durationMs": 2000 } } },
+        { "atMs": 60000,   "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 40, "durationMs": 2000 } } },
+        { "atMs": 62000,   "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 10, "durationMs": 2000 } } },
+        { "atMs": 80000,   "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 50, "durationMs": 1800 } } },
+        { "atMs": 81800,   "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 12, "durationMs": 1800 } } },
+        { "atMs": 100000,  "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 50, "durationMs": 1600 } } },
+        { "atMs": 101600,  "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 14, "durationMs": 1600 } } },
+        { "atMs": 120000,  "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 50, "durationMs": 1400 } } },
+        { "atMs": 121400,  "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 16, "durationMs": 1400 } } },
+        { "atMs": 140000,  "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 50, "durationMs": 1200 } } },
+        { "atMs": 141200,  "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 18, "durationMs": 1200 } } },
+        { "atMs": 155000,  "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 50, "durationMs": 1000 } } },
+        { "atMs": 156000,  "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 20, "durationMs": 1000 } } },
 
-          { "atMs": 360000,  "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 70, "durationMs": 1200 } } },
-          { "atMs": 361200,  "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 25, "durationMs": 1200 } } },
-          { "atMs": 390000,  "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 85, "durationMs": 1000 } } },
-          { "atMs": 391000,  "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 30, "durationMs": 1000 } } },
-          { "atMs": 420000,  "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 95, "durationMs": 900 } } },
-          { "atMs": 420900,  "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 35, "durationMs": 900 } } },
-  
-          { "atMs": 440000,  "event": { "priority": 1, "cmdId": "motor.open", "args": {} } },
-          { "atMs": 440000,  "event": { "priority": 1, "cmdId": "led.ramp.in", "args": { "endIntensity": 120, "durationMs": 2000 } } },
-  
-          { "atMs": 470000,  "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 95,  "durationMs": 1600 } } },
-          { "atMs": 471600,  "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 120, "durationMs": 1600 } } },
-          { "atMs": 500000,  "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 100, "durationMs": 1600 } } },
-          { "atMs": 501600,  "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 120, "durationMs": 1600 } } },
-  
-          { "atMs": 560000,  "event": { "priority": 1, "cmdId": "led.ramp",    "args": { "endIntensity": 0, "durationMs": 6000 } } },
-          { "atMs": 566000,  "event": { "priority": 1, "cmdId": "motor.close", "args": {} } }
-        ],
-        "loopMs": 570000
-      }
-    ],
-    "repeat": false
-  }
-  
+        { "atMs": 260000,  "event": { "priority": 1, "cmdId": "motor.open", "args": {} } },
+        { "atMs": 260000,  "event": { "priority": 1, "cmdId": "led.ramp.in", "args": { "endIntensity": 50, "durationMs": 2500 } } },
+
+        { "atMs": 280000,  "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 50, "durationMs": 1500 } } },
+        { "atMs": 281500,  "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 50, "durationMs": 1500 } } },
+        { "atMs": 300000,  "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 50, "durationMs": 1500 } } },
+        { "atMs": 301500,  "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 50, "durationMs": 1500 } } },
+
+        { "atMs": 330000,  "event": { "priority": 1, "cmdId": "motor.close", "args": {} } },
+        { "atMs": 330000,  "event": { "priority": 1, "cmdId": "led.ramp",    "args": { "endIntensity": 30, "durationMs": 2000 } } },
+
+        { "atMs": 360000,  "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 50, "durationMs": 1200 } } },
+        { "atMs": 361200,  "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 25, "durationMs": 1200 } } },
+        { "atMs": 390000,  "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 50, "durationMs": 1000 } } },
+        { "atMs": 391000,  "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 30, "durationMs": 1000 } } },
+        { "atMs": 420000,  "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 50, "durationMs": 900 } } },
+        { "atMs": 420900,  "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 35, "durationMs": 900 } } },
+
+        { "atMs": 440000,  "event": { "priority": 1, "cmdId": "motor.open", "args": {} } },
+        { "atMs": 440000,  "event": { "priority": 1, "cmdId": "led.ramp.in", "args": { "endIntensity": 50, "durationMs": 2000 } } },
+
+        { "atMs": 470000,  "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 50, "durationMs": 1600 } } },
+        { "atMs": 471600,  "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 50, "durationMs": 1600 } } },
+        { "atMs": 500000,  "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 50, "durationMs": 1600 } } },
+        { "atMs": 501600,  "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 50, "durationMs": 1600 } } },
+
+        { "atMs": 560000,  "event": { "priority": 1, "cmdId": "led.ramp",    "args": { "endIntensity": 0, "durationMs": 6000 } } },
+        { "atMs": 566000,  "event": { "priority": 1, "cmdId": "motor.close", "args": {} } }
+      ],
+      "loopMs": 640000
+    }
+  ],
+  "repeat": false
+}

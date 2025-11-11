@@ -9,10 +9,9 @@
         { "atMs": 0,     "event": { "priority": 1, "cmdId": "rgb.inner", "args": { "r": 0, "g": 0, "b": 255 } } },
         { "atMs": 0,     "event": { "priority": 1, "cmdId": "rgb.outer", "args": { "r": 255, "g": 0, "b": 100 } } },
         { "atMs": 0,     "event": { "priority": 1, "cmdId": "led.set",   "args": { "intensity": 0 } } },
-        { "atMs": 0,     "event": { "priority": 1, "cmdId": "motor.close", "args": { } } },
 
         { "atMs": 60000, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 70, "durationMs": 1000 } } },
-        { "atMs": 61000, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 70, "durationMs": 1000 } } },
+        { "atMs": 61100, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 70, "durationMs": 1000 } } },
         { "atMs": 62200, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 10, "durationMs": 600 } } },
         { "atMs": 62900, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 10, "durationMs": 600 } } },
 
@@ -62,12 +61,26 @@
         { "atMs": 116900, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 10, "durationMs": 600 } } },
 
         { "atMs": 120000, "event": { "priority": 1, "cmdId": "motor.open", "args": { } } },
-        { "atMs": 120000, "event": { "priority": 1, "cmdId": "led.ramp.in", "args": { "endIntensity": 120, "durationMs": 1600 } } },
+
+        { "atMs": 124000, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 70, "durationMs": 1000 } } },
+        { "atMs": 125100, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 70, "durationMs": 1000 } } },
+        { "atMs": 126200, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 40, "durationMs": 600 } } },
+        { "atMs": 126200, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 40, "durationMs": 600 } } },
+
+        { "atMs": 134000, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 70, "durationMs": 1000 } } },
+        { "atMs": 135100, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 70, "durationMs": 1000 } } },
+        { "atMs": 136200, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 40, "durationMs": 600 } } },
+        { "atMs": 136200, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 40, "durationMs": 600 } } },
+
+        { "atMs": 144000, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 70, "durationMs": 1000 } } },
+        { "atMs": 145100, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 70, "durationMs": 1000 } } },
+        { "atMs": 146200, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 40, "durationMs": 600 } } },
+        { "atMs": 146200, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 40, "durationMs": 600 } } },
 
         { "atMs": 209000, "event": { "priority": 1, "cmdId": "motor.close", "args": { } } },
         { "atMs": 209000, "event": { "priority": 1, "cmdId": "led.ramp",    "args": { "endIntensity": 0, "durationMs": 1000 } } }
       ],
-      "loopMs": 210000
+      "loopMs": 240000
     }
   ],
   "repeat": true
