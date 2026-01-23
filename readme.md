@@ -1,5 +1,3 @@
----
-
 # 🌸 Glow 2025 – Controller & Flower Firmware
 
 This repository is part of the **Glow 2025 / 2026 interactive flower installation**.
@@ -277,6 +275,5 @@ They are intentionally:
 * Modular
 * Robust
 * Easy to debug on-site during Glow
-
 
 
