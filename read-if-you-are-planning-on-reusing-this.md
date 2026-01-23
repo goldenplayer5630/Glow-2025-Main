@@ -1,4 +1,3 @@
----
 
 # 🌸 Glow Flower Installation – How It Works (Festival Edition)
 ## Big Picture
@@ -138,4 +137,5 @@ Designed for festivals, so:
 * **Audience** → smooth, magical experience ✨
 
 ---
+
 
