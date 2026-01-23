@@ -1,13 +1,6 @@
 ---
 
 # 🌸 Glow Flower Installation – How It Works (Festival Edition)
-
-![Image](https://newbiely.com/images/tutorial/raspberry-pi-touch-sensor-led-wiring-diagram.jpg)
-
-![Image](https://petapixel.com/assets/uploads/2024/06/how-to-build-timelapse-controller-feat.jpg)
-
-![Image](https://www.holidaycoro.com/v/vspfiles/assets/images/LOR-Controllers-Together-With-E1.31-Pixel-Controllers.gif)
-
 ## Big Picture
 
 The Glow flower installation consists of **three simple layers**:
@@ -57,26 +50,6 @@ Everything is timed so **all flowers stay synchronized**.
 
 ---
 
-## 🔌 The Cable Network (How flowers are connected)
-
-![Image](https://www.researchgate.net/publication/333870484/figure/fig2/AS%3A771484674957312%401560947688913/Connection-diagram-of-RS485-Communication-Circuit.ppm)
-
-![Image](https://res.utmel.com/Images/UEditor/31b6e9d7-153a-4b74-a160-bd3fa5de146a.jpg)
-
-![Image](https://www.lorric.com/Files/Images/HowTo/what-is-rs485/what-is-rs485-Daisy-Chain-en-53.jpg)
-
-* All flowers are connected using **one shared cable**
-* This cable:
-
-  * Runs long distances
-  * Is very reliable outdoors
-  * Connects many flowers at once
-
-If one flower fails:
-👉 **The rest keep working**
-
----
-
 ## 🌷 The Flowers (What the audience sees)
 
 Each flower:
@@ -120,7 +93,7 @@ Flowers do **not depend on each other** — they all listen to the controller.
 ```text
 Operator presses START
         ↓
-Controller plays timeline
+Controller plays show
         ↓
 Commands sent over cable
         ↓
