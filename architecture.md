@@ -2,12 +2,6 @@
 
 ## Project 1 – Controller Architecture
 
-![Image](https://wiki.wisdpi.com/~gitbook/image?dpr=4\&quality=100\&sign=d8a2fadb\&sv=2\&url=https%3A%2F%2F389921961-files.gitbook.io%2F~%2Ffiles%2Fv0%2Fb%2Fgitbook-x-prod.appspot.com%2Fo%2Fspaces%252FjPowryxiQvRDiYHC9qWy%252Fuploads%252FuF25p1H1DR1MlAqlVnLn%252FRS485%2520HAT%2520for%2520RPi%2520%25E7%25B3%25BB%25E7%25BB%259F%25E6%25A1%2586%25E5%259B%25BE.png%3Falt%3Dmedia%26token%3Db227e987-f732-4c49-b1ad-ef42bf8b980e\&width=768)
-
-![Image](https://www.seeedstudio.com/blog/wp-content/uploads/2022/10/2.png)
-
-![Image](https://www.industrialshields.com/web/image/274535/diagram.png?access_token=1661c749-71b6-44f1-9a6e-70f830eaea99)
-
 ### High-Level Overview
 
 ```text
