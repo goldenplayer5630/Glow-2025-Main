@@ -1,6 +1,3 @@
-Nice, this deserves a clean, solid README 👍
-Below is a **ready-to-drop-in README** structure for **both projects**, written as if it lives at the root of each repo. You can tweak tone later, but this is already “public-repo ready”.
-
 ---
 
 # 🌸 Glow 2025 – Controller & Flower Firmware
@@ -280,5 +277,6 @@ They are intentionally:
 * Modular
 * Robust
 * Easy to debug on-site during Glow
+
 
 
