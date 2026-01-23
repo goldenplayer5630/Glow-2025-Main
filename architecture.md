@@ -153,25 +153,21 @@ Small Flower Arduino
 
 ---
 
-### 3️⃣ Button-Enabled Variant (Hybrid)
+### 3️⃣ Modbus-Enabled Variant (Hybrid)
 
 ```text
           ┌──────────────┐
-          │ Button Input │
-          │ (Pin short)  │
+          │ RS485 Modbus │
+          │  (Relay on)  │
           └──────┬───────┘
                  │
-Controller ──► Arduino ◄── Manual Input
+Controller ──► Modbus ──► Flower
 ```
 
 * Serial **and** physical input
-* Buttons created by shorting pins
-* Useful for:
-
-  * Debugging
-  * Standalone interaction
-  * Fallback mode if bus is down
-
+* Fallback variant
+* Used later to "prove" that this could have solved some problems we had
+* Use for more then 8 flowers or if MAX485 communications fail otherwise
 ---
 
 ## Why This Architecture Works Well for Glow
