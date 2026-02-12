@@ -109,7 +109,8 @@
     <!-- Show buttons (left) -->
     <Border Grid.Column="0" Padding="8" Classes="card">
       <StackPanel Spacing="8">
-        <Button Content="Manage Buses" FontSize="12" Command="{Binding OpenManageBusesCommand}"/>
+        <Button Content="Edit Serial" FontSize="12" Command="{Binding OpenManageSerialBusCommand}"/>
+        <Button Content="Edit Modbus" FontSize="12" Command="{Binding OpenManageModBusCommand}"/>
         <Button Content="Creator" Command="{Binding OpenShowCreatorCommand}"/>
         <Button Content="Load Show" Command="{Binding LoadShowCommand}"/>
         <Button Content="Play Show" Command="{Binding PlayCommand}" Classes="play"/>

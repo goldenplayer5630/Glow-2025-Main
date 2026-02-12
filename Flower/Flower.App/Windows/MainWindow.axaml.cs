@@ -15,7 +15,7 @@ namespace Flower.App.Windows
     {
         private readonly Func<ShowCreatorWindow> _showCreatorWindowFactory;
         private readonly Func<AddFlowerWindow> _addOrUpdateFlowerWindowFactory;
-        private readonly Func<ManageBusesWindow> _manageBusesWindowFactory;
+        private readonly Func<ManageSerialBusesWindow> _manageBusesWindowFactory;
         private readonly Func<SendCommandToFlowerWindow> _sendCommandToFlowerWindowFactory;
         private readonly IBusConfigService _busCfg;
         private readonly IShowProjectStore _showStore;
@@ -32,7 +32,7 @@ namespace Flower.App.Windows
             IAppViewModel vm,
             Func<ShowCreatorWindow> showCreatorWindowFactory,
             Func<AddFlowerWindow> addFlowerWindowFactory,
-            Func<ManageBusesWindow> manageBusesWindowFactory,
+            Func<ManageSerialBusesWindow> manageBusesWindowFactory,
             Func<SendCommandToFlowerWindow> sendCommandToFlowerWindowFactory,
             IBusConfigService busCfg,
             IShowProjectStore showStore
@@ -110,7 +110,7 @@ namespace Flower.App.Windows
                 ctx.SetOutput(result);
             });
 
-            vm.OpenManageBusesInteraction.RegisterHandler(async ctx =>
+            vm.OpenManageSerialBusInteraction.RegisterHandler(async ctx =>
             {
                 var win = _manageBusesWindowFactory(); // ← has DataContext from DI
                 await win.ShowDialog(this);

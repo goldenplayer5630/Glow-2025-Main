@@ -19,7 +19,7 @@ using System.Threading.Tasks;
 
 namespace Flower.App.ViewModels
 {
-    public sealed class ManageBusesViewModel : ViewModelBase, IManageBusesViewModel, IDisposable
+    public sealed class ManageSerialBusesViewModel : ViewModelBase, IManageBusesViewModel, IDisposable
     {
         private readonly IBusConfigService _busCfg;
         private readonly IBusDirectory _busDir;
@@ -82,7 +82,7 @@ namespace Flower.App.ViewModels
         public ReactiveCommand<Unit, Unit> ConnectAllCommand { get; }
         public ReactiveCommand<Unit, Unit> DisconnectAllCommand { get; }
 
-        public ManageBusesViewModel(
+        public ManageSerialBusesViewModel(
             IBusConfigService busCfg,
             IBusDirectory busDir,
             IUiLogService? uiLog = null) // ⬅️ NEW
@@ -113,12 +113,13 @@ namespace Flower.App.ViewModels
                     return;
                 }
 
-                var cfg = new BusConfig(EditBusId.Trim(), EditPort!.Trim(), EditBaud, ConnectionStatus.Disconnected)
-                { ConnectionStatus = ConnectionStatus.Disconnected };
+                var bus = new BusConfig(EditBusId.Trim());
 
-                await _busCfg.AddAsync(cfg);
+                bus.CreateSerial(EditPort!.Trim(), EditBaud);
+
+                await _busCfg.AddAsync(bus);
                 await _busCfg.SaveAsync();
-                Status = $"Added {cfg.BusId}.";
+                Status = $"Added {bus.BusId}.";
                 _uiLog?.Info(Status); // ⬅️ NEW
                 SuggestNextFreeBusId();
             });

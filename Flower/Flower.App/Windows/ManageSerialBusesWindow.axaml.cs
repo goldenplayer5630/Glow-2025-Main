@@ -5,11 +5,11 @@ using System;
 
 namespace Flower.App.Windows
 {
-    public partial class ManageBusesWindow : Window
+    public partial class ManageSerialBusesWindow : Window
     {
-        public ManageBusesWindow() => InitializeComponent();
+        public ManageSerialBusesWindow() => InitializeComponent();
 
-        public ManageBusesWindow(IManageBusesViewModel vm) : this()
+        public ManageSerialBusesWindow(IManageBusesViewModel vm) : this()
         {
             DataContext = vm;
 

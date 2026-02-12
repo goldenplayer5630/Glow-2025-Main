@@ -1,0 +1,39 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:app="using:Flower.App"
+        xmlns:views="clr-namespace:Flower.App.Views"
+        x:Class="Flower.App.Windows.ManageModBusesWindow"
+        Title="Manage Buses"
+        Width="700" Height="460"
+        MinWidth="700" MinHeight="460"
+        MaxWidth="700" MaxHeight="460"
+        CanResize="False"
+        WindowStartupLocation="CenterOwner">
+
+  <!-- Tablet-friendly buttons (match MainView) -->
+  <Window.Styles>
+    <Style Selector="Button">
+      <Setter Property="FontSize" Value="14"/>
+      <Setter Property="MinHeight" Value="40"/>
+      <Setter Property="MinWidth" Value="110"/>
+      <Setter Property="Padding" Value="10,6"/>
+      <Setter Property="CornerRadius" Value="6"/>
+      <Setter Property="HorizontalContentAlignment" Value="Center"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+  </Window.Styles>
+
+  <Grid RowDefinitions="*,Auto" Margin="16">
+    <!-- The form (already updated to use NumericUpDown/TextBox without InputScope) -->
+    <views:ManageModBusesView/>
+
+    <!-- Bottom action row -->
+    <StackPanel Grid.Row="1"
+                Orientation="Horizontal"
+                HorizontalAlignment="Right"
+                Spacing="12"
+                Margin="0,0,0,0">
+      <Button x:Name="CloseButton" Content="Close" IsCancel="True"/>
+    </StackPanel>
+  </Grid>
+</Window>

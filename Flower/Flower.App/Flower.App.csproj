@@ -24,6 +24,7 @@
     <PackageReference Include="Avalonia.ReactiveUI" Version="$(AvaloniaVersion)" />
     <!--Condition below is needed to remove Avalonia.Diagnostics package from build output in Release configuration.-->
     <PackageReference Condition="'$(Configuration)' == 'Debug'" Include="Avalonia.Diagnostics" Version="$(AvaloniaVersion)" />
+    <PackageReference Include="EasyModbusTCP" Version="5.6.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.9" />
     <PackageReference Include="RJCP.SerialPortStream" Version="3.0.4" />
     <PackageReference Include="Serilog" Version="4.3.0" />
@@ -41,11 +42,17 @@
     <Compile Update="Views\AssignBusView.axaml.cs">
       <DependentUpon>AssignBusView.axaml</DependentUpon>
     </Compile>
+    <Compile Update="Views\ManageSerialBusesView.axaml.cs">
+      <DependentUpon>ManageSerialBusesView.axaml</DependentUpon>
+    </Compile>
     <Compile Update="Views\SettingsView.axaml.cs">
       <DependentUpon>SettingsView.axaml</DependentUpon>
     </Compile>
     <Compile Update="Windows\AddOrUpdateFlowerWindow.axaml.cs">
       <DependentUpon>AddOrUpdateFlowerWindow.axaml</DependentUpon>
+    </Compile>
+    <Compile Update="Windows\ManageSerialBusesWindow.axaml.cs">
+      <DependentUpon>ManageSerialBusesWindow.axaml</DependentUpon>
     </Compile>
     <Compile Update="Windows\SendCommandToFlowerWindow.axaml.cs">
       <DependentUpon>SendCommandToFlowerWindow.axaml</DependentUpon>

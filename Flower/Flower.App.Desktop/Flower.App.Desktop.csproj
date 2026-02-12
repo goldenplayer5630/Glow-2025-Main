@@ -12,6 +12,7 @@
   <ItemGroup>
     <PackageReference Include="Avalonia.Desktop" Version="$(AvaloniaVersion)" />
     <PackageReference Include="Avalonia.LinuxFramebuffer" Version="$(AvaloniaVersion)" />
+    <PackageReference Include="EasyModbusTCP" Version="5.6.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="9.0.9" />
     <PackageReference Include="RJCP.SerialPortStream" Version="3.0.4" />
     <PackageReference Include="Serilog" Version="4.3.0" />

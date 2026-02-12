@@ -90,14 +90,14 @@ public static class Program
                 s.AddTransient<ISendCommandToflowerViewModel, SendCommandToFlowerViewModel>();
                 s.AddTransient<IShowCreatorViewModel, ShowCreatorViewModel>();
                 s.AddTransient<IAddOrUpdateFlowerViewModel, AddOrUpdateFlowerViewModel>();
-                s.AddTransient<IManageBusesViewModel, ManageBusesViewModel>();
+                s.AddTransient<IManageBusesViewModel, ManageSerialBusesViewModel>();
                 s.AddTransient<IAssignBusViewModel, AssignBusViewModel>();
                 s.AddTransient<ILoadShowViewModel, LoadShowViewModel>();
 
                 // ============ Views / Windows ============
                 s.AddTransient<ShowCreatorWindow>();
                 s.AddTransient<AddFlowerWindow>();
-                s.AddTransient<ManageBusesWindow>();
+                s.AddTransient<ManageSerialBusesWindow>();
                 s.AddTransient<AssignBusWindow>();
                 s.AddTransient<SendCommandToFlowerWindow>();
                 s.AddTransient<LoadShowWindow>();
@@ -106,7 +106,7 @@ public static class Program
                 // ============ Factories ============
                 s.AddTransient<Func<ShowCreatorWindow>>(sp => () => sp.GetRequiredService<ShowCreatorWindow>());
                 s.AddTransient<Func<AddFlowerWindow>>(sp => () => sp.GetRequiredService<AddFlowerWindow>());
-                s.AddTransient<Func<ManageBusesWindow>>(sp => () => sp.GetRequiredService<ManageBusesWindow>());
+                s.AddTransient<Func<ManageSerialBusesWindow>>(sp => () => sp.GetRequiredService<ManageSerialBusesWindow>());
                 s.AddTransient<Func<AssignBusWindow>>(sp => () => sp.GetRequiredService<AssignBusWindow>());
                 s.AddTransient<Func<SendCommandToFlowerWindow>>(sp => () => sp.GetRequiredService<SendCommandToFlowerWindow>());
 

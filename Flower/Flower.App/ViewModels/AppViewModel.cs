@@ -152,8 +152,10 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
     // ========= Dialog Interactions =========
     public ReactiveCommand<Unit, Unit> OpenShowCreatorCommand { get; }
     public Interaction<Unit, Unit> OpenShowCreatorInteraction { get; } = new();
-    public ReactiveCommand<Unit, Unit> OpenManageBusesCommand { get; }
-    public Interaction<Unit, Unit> OpenManageBusesInteraction { get; } = new();
+    public ReactiveCommand<Unit, Unit> OpenManageSerialBusCommand { get; }
+    public Interaction<Unit, Unit> OpenManageSerialBusInteraction { get; } = new();
+    public ReactiveCommand<Unit, Unit> OpenManageModBusCommand { get; }
+    public Interaction<Unit, Unit> OpenManageModBusInteraction { get; } = new();
 
     public Interaction<Unit, FlowerUnit?> AddFlowerInteraction { get; } = new();
     public Interaction<FlowerUnit, FlowerUnit?> UpdateFlowerInteraction { get; } = new();
@@ -258,9 +260,9 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
             await OpenShowCreatorInteraction.Handle(Unit.Default);
         });
 
-        OpenManageBusesCommand = ReactiveCommand.CreateFromTask(async () =>
+        OpenManageSerialBusCommand = ReactiveCommand.CreateFromTask(async () =>
         {
-            await OpenManageBusesInteraction.Handle(Unit.Default);
+            await OpenManageSerialBusInteraction.Handle(Unit.Default);
         });
 
         SendCommandToFlowerCommand = ReactiveCommand.CreateFromTask(async () =>

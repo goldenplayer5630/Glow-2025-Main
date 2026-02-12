@@ -4,7 +4,7 @@
     xmlns:ac="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls"
     xmlns:conv="using:Flower.App.Utilities"
     xmlns:vm="clr-namespace:Flower.App.ViewModels"
-    x:Class="Flower.App.Views.ManageBusesView"
+    x:Class="Flower.App.Views.ManageSerialBusesView"
     x:DataType="vm:IManageBusesViewModel">
 
   <!-- Compact styles for 800x480 -->

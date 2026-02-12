@@ -5,14 +5,14 @@ using Flower.App.ViewModels;
 
 namespace Flower.App.Views;
 
-public partial class ManageBusesView : UserControl
+public partial class ManageSerialBusesView : UserControl
 {
-    public ManageBusesView()
+    public ManageSerialBusesView()
     {
         InitializeComponent();
     }
 
-    public ManageBusesView(IAddOrUpdateFlowerViewModel vm) : this()
+    public ManageSerialBusesView(IAddOrUpdateFlowerViewModel vm) : this()
     {
         DataContext = vm;
     }
