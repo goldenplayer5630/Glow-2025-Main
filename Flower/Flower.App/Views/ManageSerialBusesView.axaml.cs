@@ -12,7 +12,7 @@ public partial class ManageSerialBusesView : UserControl
         InitializeComponent();
     }
 
-    public ManageSerialBusesView(IAddOrUpdateFlowerViewModel vm) : this()
+    public ManageSerialBusesView(object vm) : this()
     {
         DataContext = vm;
     }

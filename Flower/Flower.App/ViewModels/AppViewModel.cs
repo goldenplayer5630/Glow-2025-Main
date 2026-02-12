@@ -265,6 +265,11 @@ public sealed class AppViewModel : ViewModelBase, IAppViewModel, IDisposable
             await OpenManageSerialBusInteraction.Handle(Unit.Default);
         });
 
+        OpenManageModBusCommand = ReactiveCommand.CreateFromTask(async () =>
+        {
+            await OpenManageModBusInteraction.Handle(Unit.Default);
+        });
+
         SendCommandToFlowerCommand = ReactiveCommand.CreateFromTask(async () =>
         {
             var flower = SelectedFlower;

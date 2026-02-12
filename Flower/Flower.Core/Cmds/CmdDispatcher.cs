@@ -54,17 +54,17 @@ namespace Flower.Core.Cmds
             await foreach (var work in ch.Reader.ReadAllAsync())
             {
                 // ---- CHECK BUS CONNECTION FIRST ----
-                IProtocolClient? protocol = null;
+                IBusClient? client = null;
                 try
                 {
-                    protocol = _buses.GetProtocol(key.BusId); // throws if not present / not connected
+                    client = _buses.GetClient(key.BusId); // throws if not present / not connected
                 }
                 catch
                 {
                     work.Tcs.TrySetResult(CommandOutcome.BusNotConnected);
                     continue;
                 }
-                if (protocol is null)
+                if (client is null || !client.IsOpen)
                 {
                     work.Tcs.TrySetResult(CommandOutcome.BusNotConnected);
                     continue;
@@ -89,26 +89,21 @@ namespace Flower.Core.Cmds
                 }
 
                 // -------------------------------------------------------
-
                 var r = work.Req;
                 var outcome = CommandOutcome.Timeout;
 
                 try
                 {
-                    var corr = Guid.NewGuid();
-                    var env = new ProtocolEnvelope(
-                        corr, r.FlowerId, r.CommandId,
-                        r.Frames, ProtocolMessageType.Command);
-
-                    var ack = await protocol.SendAndWaitAckAsync(env, r.AckTimeout);
-
-                    if (r.FlowerId == 0)
-                        outcome = CommandOutcome.Timeout;
-                    else
-                        outcome = ack.Type == ProtocolMessageType.Ack ? CommandOutcome.Acked : CommandOutcome.Nacked;
+                    outcome = await client.SendAsync(r);
                 }
-                catch (OperationCanceledException) { outcome = CommandOutcome.Acked; }
-                catch { outcome = CommandOutcome.Timeout; }
+                catch (OperationCanceledException)
+                {
+                    outcome = CommandOutcome.Acked;
+                }
+                catch
+                {
+                    outcome = CommandOutcome.Timeout;
+                }
 
                 // State transitions
                 // State transitions – keep the unit's ConnectionStatus accurate for all outcomes

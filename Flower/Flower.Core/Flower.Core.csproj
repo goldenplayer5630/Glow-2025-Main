@@ -8,11 +8,11 @@
 
   <ItemGroup>
     <PackageReference Include="EasyModbusTCP" Version="5.6.0" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-    <PackageReference Include="ReactiveUI" Version="18.3.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+    <PackageReference Include="ReactiveUI" Version="22.3.1" />
     <PackageReference Include="RJCP.SerialPortStream" Version="3.0.4" />
-    <PackageReference Include="Serilog" Version="4.3.0" />
-    <PackageReference Include="System.IO.Ports" Version="9.0.9" />
+    <PackageReference Include="Serilog" Version="4.3.1" />
+    <PackageReference Include="System.IO.Ports" Version="10.0.3" />
   </ItemGroup>
 
   <ItemGroup>

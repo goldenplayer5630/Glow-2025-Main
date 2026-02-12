@@ -3,7 +3,7 @@ using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
 using Flower.App.ViewModels;
 
-namespace Flower.App.Windows;
+namespace Flower.App.Views;
 
 public partial class ManageModBusesView : UserControl
 {
@@ -12,7 +12,7 @@ public partial class ManageModBusesView : UserControl
         InitializeComponent();
     }
 
-    public ManageModBusesView(IAddOrUpdateFlowerViewModel vm) : this()
+    public ManageModBusesView(object vm) : this()
     {
         DataContext = vm;
     }

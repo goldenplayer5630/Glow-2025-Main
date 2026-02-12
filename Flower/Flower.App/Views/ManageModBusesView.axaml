@@ -4,50 +4,56 @@
     xmlns:ac="clr-namespace:Avalonia.Controls;assembly=Avalonia.Controls"
     xmlns:conv="using:Flower.App.Utilities"
     xmlns:vm="clr-namespace:Flower.App.ViewModels"
-    x:Class="Flower.App.Views.ManageSerialBusesView"
-    x:DataType="vm:IManageBusesViewModel">
+    x:Class="Flower.App.Views.ManageModBusesView"
+    x:DataType="vm:IManageModBusesViewModel">
 
-  <!-- Compact styles for 800x480 -->
   <UserControl.Styles>
-    <!-- Buttons -->
+    <!-- Global controls -->
     <Style Selector="Button">
       <Setter Property="FontSize" Value="14"/>
       <Setter Property="MinHeight" Value="40"/>
-      <Setter Property="MinWidth" Value="110"/>
       <Setter Property="Padding" Value="10,6"/>
       <Setter Property="CornerRadius" Value="6"/>
       <Setter Property="HorizontalContentAlignment" Value="Center"/>
       <Setter Property="VerticalContentAlignment" Value="Center"/>
     </Style>
 
-    <!-- ComboBox -->
     <Style Selector="ComboBox">
       <Setter Property="FontSize" Value="14"/>
       <Setter Property="MinHeight" Value="40"/>
       <Setter Property="Padding" Value="10,6"/>
-      <Setter Property="MinWidth" Value="180"/>
       <Setter Property="HorizontalContentAlignment" Value="Left"/>
       <Setter Property="VerticalContentAlignment" Value="Center"/>
     </Style>
 
-    <!-- NumericUpDown -->
+    <Style Selector="TextBox">
+      <Setter Property="FontSize" Value="14"/>
+      <Setter Property="MinHeight" Value="40"/>
+      <Setter Property="Padding" Value="10,6"/>
+      <Setter Property="HorizontalContentAlignment" Value="Left"/>
+      <Setter Property="VerticalContentAlignment" Value="Center"/>
+    </Style>
+
     <Style Selector="ac|NumericUpDown">
       <Setter Property="FontSize" Value="14"/>
       <Setter Property="MinHeight" Value="40"/>
       <Setter Property="Padding" Value="10,6"/>
-      <Setter Property="MinWidth" Value="180"/>
     </Style>
 
-    <!-- List items -->
     <Style Selector="ListBoxItem">
-      <Setter Property="MinHeight" Value="36"/>
-      <Setter Property="Padding" Value="6,4"/>
+      <Setter Property="MinHeight" Value="44"/>
+      <Setter Property="Padding" Value="8,6"/>
       <Setter Property="FontSize" Value="14"/>
     </Style>
 
     <Style Selector="TextBlock.header">
-      <Setter Property="FontSize" Value="16"/>
+      <Setter Property="FontSize" Value="15"/>
       <Setter Property="FontWeight" Value="SemiBold"/>
+    </Style>
+
+    <Style Selector="TextBlock.subtle">
+      <Setter Property="Opacity" Value="0.75"/>
+      <Setter Property="FontSize" Value="13"/>
     </Style>
   </UserControl.Styles>
 
@@ -55,121 +61,120 @@
     <conv:ConnectionStatusToBrushConverter x:Key="StatusBrush" />
   </UserControl.Resources>
 
-  <Grid ColumnDefinitions="2*,3*" RowDefinitions="Auto,*,Auto" Margin="12">
-    <!-- Header -->
-    <Grid Grid.Row="0" Grid.ColumnSpan="2"
-          ColumnDefinitions="Auto,Auto,*,Auto,Auto"
-          Margin="0,0,0,8">
-      <Button Grid.Column="0" Content="Refresh Ports" Command="{Binding RefreshPortsCommand}" Margin="0,0,8,0"/>
-      <TextBlock Grid.Column="2" Text="{Binding Status}" VerticalAlignment="Center" Opacity="0.7" Margin="16,0,0,0"/>
-      <!-- optional:
-      <Button Grid.Column="3" Content="Connect All" Command="{Binding ConnectAllCommand}" Margin="16,0,0,0"/>
-      <Button Grid.Column="4" Content="Disconnect All" Command="{Binding DisconnectAllCommand}" Margin="8,0,0,0"/>
-      -->
-    </Grid>
+  <!-- Outer layout -->
+  <Grid Margin="12" RowDefinitions="Auto,12,*">
 
-    <!-- Left column: List -->
-    <Border Grid.Row="1" Grid.Column="0" Padding="10" Classes="card" Margin="0,0,8,0">
-      <ListBox ItemsSource="{Binding Buses}" SelectedItem="{Binding Selected}">
-        <ListBox.ItemTemplate>
-          <DataTemplate>
-            <Grid ColumnDefinitions="*,*,Auto,Auto" Margin="0,6">
-              <TextBlock Grid.Column="0" Text="{Binding BusId}" FontWeight="SemiBold"/>
-              <TextBlock Grid.Column="1" Text="{Binding Port}" Margin="12,0,0,0"/>
-              <TextBlock Grid.Column="2" Text="{Binding Baud}" Margin="12,0,0,0" HorizontalAlignment="Right"/>
-
-              <!-- FIX: column index 3 (not 6) -->
-              <Ellipse Grid.Column="3"
-                       Width="12" Height="12"
-                       HorizontalAlignment="Right"
-                       Margin="12,0,0,0"
-                       VerticalAlignment="Center">
-                <Ellipse.Fill>
-                  <SolidColorBrush Color="{Binding ConnectionStatus, Converter={StaticResource StatusBrush}, ConverterParameter={x:Null}}"/>
-                </Ellipse.Fill>
-                <ac:ToolTip.Tip>
-                  <TextBlock Text="{Binding ConnectionStatus}"/>
-                </ac:ToolTip.Tip>
-              </Ellipse>
-            </Grid>
-          </DataTemplate>
-        </ListBox.ItemTemplate>
-      </ListBox>
+    <!-- TOP STATUS -->
+    <Border Grid.Row="0" Padding="10" Classes="card">
+      <TextBlock Text="{Binding Status}" Classes="subtle" />
     </Border>
 
-    <!-- Right column: Editor + Actions -->
-    <Grid Grid.Row="1" Grid.Column="1" RowDefinitions="*,Auto">
-      <!-- Editor -->
-      <Border Grid.Row="0" Padding="10" Classes="card" Margin="0,0,0,8">
-        <Grid RowDefinitions="Auto,8,Auto,8,Auto" ColumnDefinitions="140,*">
-          <!-- Bus Id -->
-          <TextBlock Grid.Row="0" Grid.Column="0" Text="Bus Id:" VerticalAlignment="Center" Classes="header"/>
-          <ComboBox  Grid.Row="0" Grid.Column="1"
-                     ItemsSource="{Binding BusIdOptions}"
-                     SelectedItem="{Binding EditBusId}"
-                     IsEnabled="{Binding Selected, Converter={x:Static ObjectConverters.IsNull}}"
-                     MinWidth="220" Margin="0,0,0,8"/>
+    <!-- MAIN CONTENT -->
+    <Grid Grid.Row="2" ColumnDefinitions="2*,3*" ColumnSpacing="8">
 
-          <!-- Port -->
-          <TextBlock Grid.Row="2" Grid.Column="0" Text="Port:" VerticalAlignment="Center" Classes="header"/>
-          <ComboBox  Grid.Row="2" Grid.Column="1"
-                     ItemsSource="{Binding Ports}"
-                     SelectedItem="{Binding EditPort}"
-                     MinWidth="220" Margin="0,0,0,8"/>
+      <!-- LEFT COLUMN: List -->
+      <Grid Grid.Column="0">
+        <Border Padding="10" Classes="card">
+          <ListBox ItemsSource="{Binding Buses}" SelectedItem="{Binding Selected}">
+            <ListBox.ItemTemplate>
+              <DataTemplate>
+                <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto" Margin="0,2">
+                  <TextBlock Grid.Row="0" Grid.Column="0"
+                             Text="{Binding BusId}"
+                             FontWeight="SemiBold"/>
 
-          <!-- Baud -->
-          <TextBlock Grid.Row="4" Grid.Column="0" Text="Baud:" VerticalAlignment="Center" Classes="header"/>
-          <!-- FIX: Row=4 instead of 5 -->
-          <NumericUpDown Grid.Row="4" Grid.Column="1"
-                         Value="{Binding EditBaud}"
-                         Minimum="1200" Maximum="1000000" Increment="1200"
-                         Width="220" HorizontalAlignment="Left"/>
-        </Grid>
-      </Border>
+                  <Ellipse Grid.RowSpan="2"
+                           Grid.Column="1"
+                           Width="12" Height="12"
+                           VerticalAlignment="Center"
+                           HorizontalAlignment="Right"
+                           Margin="12,0,0,0">
+                    <Ellipse.Fill>
+                      <SolidColorBrush Color="{Binding ConnectionStatus, Converter={StaticResource StatusBrush}}"/>
+                    </Ellipse.Fill>
+                    <ac:ToolTip.Tip>
+                      <TextBlock Text="{Binding ConnectionStatus}"/>
+                    </ac:ToolTip.Tip>
+                  </Ellipse>
 
-      <!-- Actions -->
-      <Border Grid.Row="1" Padding="10" Classes="card">
-        <!-- 3 columns with 8px gutters; 2 rows with an 8px gutter -->
-        <Grid RowDefinitions="Auto,8,Auto"
-              ColumnDefinitions="Auto,8,Auto,8,Auto">
+                  <TextBlock Grid.Row="1" Grid.Column="0" Classes="subtle">
+                    <Run Text="{Binding ModbusHost}" />
+                    <Run Text=":" />
+                    <Run Text="{Binding ModbusPort}" />
+                    <Run Text=" - Unit " />
+                    <Run Text="{Binding ModbusUnitId}" />
+                  </TextBlock>
+                </Grid>
+              </DataTemplate>
+            </ListBox.ItemTemplate>
+          </ListBox>
+        </Border>
+      </Grid>
 
-          <!-- Row 1 -->
-          <Button Grid.Row="0" Grid.Column="0"
-                  Content="Add"
-                  Command="{Binding AddCommand}"
-                  Margin="0,0,0,8"/>
+      <!-- Right: Editor + Actions -->
+      <Grid Grid.Column="1" RowDefinitions="Auto,Auto" RowSpacing="8">
 
-          <Button Grid.Row="0" Grid.Column="2"
-                  Content="Update"
-                  Command="{Binding UpdateCommand}"
-                  Margin="0,0,0,8"/>
+        <!-- Editor card -->
+        <Border Grid.Row="0" Padding="10" Classes="card">
+          <Grid RowDefinitions="Auto,6,Auto,6,Auto"
+                ColumnDefinitions="*,8,*">
 
-          <Button Grid.Row="0" Grid.Column="4"
-                  Content="Delete"
-                  Command="{Binding DeleteCommand}"
-                  Margin="0,0,0,8"/>
+            <!-- Row 0: BusId + UnitId -->
+            <StackPanel Grid.Row="0" Grid.Column="0" Spacing="2">
+              <TextBlock Text="Bus Id:" Classes="header"/>
+              <ComboBox ItemsSource="{Binding BusIdOptions}"
+                        SelectedItem="{Binding EditBusId}"
+                        IsEnabled="{Binding Selected, Converter={x:Static ObjectConverters.IsNull}}"/>
+            </StackPanel>
 
-          <!-- Row 2 -->
-          <Button Grid.Row="2" Grid.Column="0"
-                  Content="Connect"
-                  Command="{Binding ConnectCommand}"/>
+            <StackPanel Grid.Row="0" Grid.Column="2" Spacing="2">
+              <TextBlock Text="Unit Id:" Classes="header"/>
+              <ac:NumericUpDown Value="{Binding EditUnitId}"
+                                Minimum="1" Maximum="247" Increment="1"/>
+            </StackPanel>
 
-          <Button Grid.Row="2" Grid.Column="2"
-                  Content="Disconnect"
-                  Command="{Binding DisconnectCommand}"/>
+            <!-- Row 2: Host (full width) -->
+            <StackPanel Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3" Spacing="2">
+              <TextBlock Text="Host / IP:" Classes="header"/>
+              <TextBox Text="{Binding EditHost}"
+                       Watermark="192.168.1.200"/>
+            </StackPanel>
 
-          <Button Grid.Row="2" Grid.Column="4"
-                  IsEnabled="False"
-                  Content=""
-                  Opacity="0.35"/>
-        </Grid>
-      </Border>
+            <!-- Row 4: TCP Port + Timeout -->
+            <StackPanel Grid.Row="4" Grid.Column="0" Spacing="2">
+              <TextBlock Text="TCP Port:" Classes="header"/>
+              <ac:NumericUpDown Value="{Binding EditPort}"
+                                Minimum="1" Maximum="65535" Increment="1"/>
+            </StackPanel>
+
+            <StackPanel Grid.Row="4" Grid.Column="2" Spacing="2">
+              <TextBlock Text="Timeout (ms):" Classes="header"/>
+              <ac:NumericUpDown Value="{Binding EditTimeoutMs}"
+                                Minimum="100" Maximum="20000" Increment="100"/>
+            </StackPanel>
+
+          </Grid>
+        </Border>
+
+        <!-- Actions card -->
+        <Border Grid.Row="1" Padding="10" Classes="card">
+          <Grid RowDefinitions="Auto,8,Auto"
+                ColumnDefinitions="*,*,*"
+                ColumnSpacing="10">
+
+            <!-- Row 1 -->
+            <Button Grid.Row="0" Grid.Column="0" Content="Add" Command="{Binding AddCommand}"/>
+            <Button Grid.Row="0" Grid.Column="1" Content="Update" Command="{Binding UpdateCommand}"/>
+            <Button Grid.Row="0" Grid.Column="2" Content="Delete" Command="{Binding DeleteCommand}"/>
+
+            <!-- Row 2 -->
+            <Button Grid.Row="2" Grid.Column="0" Content="Test" Command="{Binding TestCommand}"/>
+            <Button Grid.Row="2" Grid.Column="1" Content="Connect" Command="{Binding ConnectCommand}"/>
+            <Button Grid.Row="2" Grid.Column="2" Content="Disconnect" Command="{Binding DisconnectCommand}"/>
+          </Grid>
+        </Border>
+
+      </Grid>
     </Grid>
-
-    <!-- Footer -->
-    <TextBlock Grid.Row="2" Grid.ColumnSpan="2"
-               Text="{Binding Status}"
-               Opacity="0.7"
-               Margin="0,8,0,0"/>
   </Grid>
 </UserControl>

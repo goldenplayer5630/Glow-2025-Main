@@ -1,8 +1,7 @@
 ﻿using Avalonia;
-using Avalonia.ReactiveUI;
 using Bus.Core.Services;
+using EasyModbus;
 using Flower.App.ViewModels;
-using Flower.App.Views;
 using Flower.App.Windows;
 using Flower.Core.Abstractions.Commands;
 using Flower.Core.Abstractions.Factories;
@@ -16,6 +15,7 @@ using Flower.Infrastructure.Persistence;
 using Flower.Infrastructure.Protocol;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using ReactiveUI.Avalonia;
 using System;
 using System.Linq;
 using System.Threading;
@@ -31,26 +31,30 @@ public static class Program
             .ConfigureServices(s =>
             {
                 // ============ Transport / Protocol ===========
-
-                // Frame codec (use your real binary codec if you have one)
                 s.AddSingleton<IFrameCodec, JsonLineCodec>();
 
-                // Bus directory creates its own SerialPortTransport + ProtocolClient per bus
+                // Bus directory: make sure this version supports BOTH Serial + Modbus
                 s.AddSingleton<IBusDirectory, BusDirectory>();
+                s.AddSingleton<IModBusCommandMapper, ModbusCommandMapper>();
+
+                // Optional: UI "Test connection" button support
+                s.AddSingleton<IModBusConnectionTester, ModBusConnectionTester>();
+
+                // If your BusDirectory needs to construct transports via DI instead of new()
+                // register transport(s) too:
+                s.AddTransient<SerialPortTransport>();
+                s.AddTransient<ModbusTcpClientTransport>();
 
                 // ============ State & Domain ============
-                // Flower store + service (authoritative collection)
                 s.AddSingleton<IFlowerStore, FlowerStore>();
                 s.AddSingleton<IFlowerService, FlowerService>();
-
-                // Single-writer state mutator (used by dispatcher on ACK/timeout)
                 s.AddSingleton<IFlowerStateService, FlowerStateService>();
 
-                // Bus Service+ store
+                // Bus Service + store
                 s.AddSingleton<IBusConfigStore, BusConfigStore>();
                 s.AddSingleton<IBusConfigService, BusConfigService>();
 
-                // Commands (domain-level, human-readable Ids)
+                // ============ Commands ============
                 s.AddSingleton<IFlowerCommand, LedSetCmd>();
                 s.AddSingleton<IFlowerCommand, LedRampCmd>();
                 s.AddSingleton<IFlowerCommand, LedRampInCmd>();
@@ -64,16 +68,12 @@ public static class Program
                 s.AddSingleton<IFlowerCommand, MotorCloseLedRamp>();
                 s.AddSingleton<IFlowerCommand, MotorStopCmd>();
                 s.AddSingleton<IFlowerCommand, PingCmd>();
-                // (optional) s.AddSingleton<IFlowerCommand, InitCmd>();
 
-                // Registry maps string ids <-> command instances (+ optional wire codes)
                 s.AddSingleton<ICommandRegistry, CommandRegistry>();
                 s.AddSingleton<ICommandRequestFactory, CommandRequestFactory>();
-                // ============ Show engine ============
-                // Dispatcher (per-flower queues, send->wait ACK->update state)
-                s.AddSingleton<ICmdDispatcher, CmdDispatcher>();
 
-                // Scheduler drives timing; ShowPlayer builds dispatchable events
+                // ============ Show engine ============
+                s.AddSingleton<ICmdDispatcher, CmdDispatcher>();
                 s.AddSingleton<IShowSchedulerService, ShowSchedulerService>();
                 s.AddSingleton<IShowPlayerService, ShowPlayerService>();
                 s.AddSingleton<ICommandService, CommandService>();
@@ -91,6 +91,7 @@ public static class Program
                 s.AddTransient<IShowCreatorViewModel, ShowCreatorViewModel>();
                 s.AddTransient<IAddOrUpdateFlowerViewModel, AddOrUpdateFlowerViewModel>();
                 s.AddTransient<IManageBusesViewModel, ManageSerialBusesViewModel>();
+                s.AddTransient<IManageModBusesViewModel, ManageModBusesViewModel>();
                 s.AddTransient<IAssignBusViewModel, AssignBusViewModel>();
                 s.AddTransient<ILoadShowViewModel, LoadShowViewModel>();
 
@@ -98,6 +99,7 @@ public static class Program
                 s.AddTransient<ShowCreatorWindow>();
                 s.AddTransient<AddFlowerWindow>();
                 s.AddTransient<ManageSerialBusesWindow>();
+                s.AddTransient<ManageModBusesWindow>();
                 s.AddTransient<AssignBusWindow>();
                 s.AddTransient<SendCommandToFlowerWindow>();
                 s.AddTransient<LoadShowWindow>();
@@ -107,13 +109,14 @@ public static class Program
                 s.AddTransient<Func<ShowCreatorWindow>>(sp => () => sp.GetRequiredService<ShowCreatorWindow>());
                 s.AddTransient<Func<AddFlowerWindow>>(sp => () => sp.GetRequiredService<AddFlowerWindow>());
                 s.AddTransient<Func<ManageSerialBusesWindow>>(sp => () => sp.GetRequiredService<ManageSerialBusesWindow>());
+                s.AddTransient<Func<ManageModBusesWindow>>(sp => () => sp.GetRequiredService<ManageModBusesWindow>());
                 s.AddTransient<Func<AssignBusWindow>>(sp => () => sp.GetRequiredService<AssignBusWindow>());
                 s.AddTransient<Func<SendCommandToFlowerWindow>>(sp => () => sp.GetRequiredService<SendCommandToFlowerWindow>());
 
                 // ============ Cross-cutting ============
                 s.AddSingleton<IUiLogService, UiLogService>();
-
             })
+
             .Build();
 
         var builder = BuildAvaloniaAppWithHost(host);

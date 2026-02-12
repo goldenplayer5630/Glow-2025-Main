@@ -10,7 +10,7 @@ public partial class ManageModBusesWindow : Window
 {
     public ManageModBusesWindow() => InitializeComponent();
 
-    public ManageModBusesWindow(IManageBusesViewModel vm) : this()
+    public ManageModBusesWindow(IManageModBusesViewModel vm) : this()
     {
         DataContext = vm;
 

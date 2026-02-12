@@ -16,6 +16,7 @@ namespace Flower.App.Windows
         private readonly Func<ShowCreatorWindow> _showCreatorWindowFactory;
         private readonly Func<AddFlowerWindow> _addOrUpdateFlowerWindowFactory;
         private readonly Func<ManageSerialBusesWindow> _manageBusesWindowFactory;
+        private readonly Func<ManageModBusesWindow> _manageModBusesWindowFactory;
         private readonly Func<SendCommandToFlowerWindow> _sendCommandToFlowerWindowFactory;
         private readonly IBusConfigService _busCfg;
         private readonly IShowProjectStore _showStore;
@@ -33,6 +34,7 @@ namespace Flower.App.Windows
             Func<ShowCreatorWindow> showCreatorWindowFactory,
             Func<AddFlowerWindow> addFlowerWindowFactory,
             Func<ManageSerialBusesWindow> manageBusesWindowFactory,
+            Func<ManageModBusesWindow> manageModBusesWindowFactory,
             Func<SendCommandToFlowerWindow> sendCommandToFlowerWindowFactory,
             IBusConfigService busCfg,
             IShowProjectStore showStore
@@ -42,6 +44,7 @@ namespace Flower.App.Windows
             _showCreatorWindowFactory = showCreatorWindowFactory;
             _addOrUpdateFlowerWindowFactory = addFlowerWindowFactory;
             _manageBusesWindowFactory = manageBusesWindowFactory;
+            _manageModBusesWindowFactory = manageModBusesWindowFactory;
             _sendCommandToFlowerWindowFactory = sendCommandToFlowerWindowFactory;
             _busCfg = busCfg;
             _showStore = showStore ?? throw new ArgumentNullException(nameof(showStore));
@@ -113,6 +116,13 @@ namespace Flower.App.Windows
             vm.OpenManageSerialBusInteraction.RegisterHandler(async ctx =>
             {
                 var win = _manageBusesWindowFactory(); // ← has DataContext from DI
+                await win.ShowDialog(this);
+                ctx.SetOutput(Unit.Default);
+            });
+
+            vm.OpenManageModBusInteraction.RegisterHandler(async ctx =>
+            {
+                var win = _manageModBusesWindowFactory(); // ← has DataContext from DI
                 await win.ShowDialog(this);
                 ctx.SetOutput(Unit.Default);
             });

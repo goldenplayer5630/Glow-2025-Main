@@ -6,32 +6,26 @@ using ReactiveUI;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
-using System.IO;
-using System.IO.Ports;
 using System.Linq;
 using System.Reactive;
 using System.Reactive.Linq;
-using System.Runtime.InteropServices;
 
 namespace Flower.App.ViewModels
 {
-    public sealed class ManageSerialBusesViewModel : ViewModelBase, IManageBusesViewModel, IDisposable
+    public sealed class ManageModBusesViewModel : ViewModelBase, IManageModBusesViewModel
     {
         private readonly IBusConfigService _busCfg;
         private readonly IBusDirectory _busDir;
         private readonly IUiLogService? _uiLog;
+        private readonly IModBusConnectionTester? _tester;
 
         private System.Collections.Specialized.INotifyCollectionChanged? _busCfgNotifier;
         private bool _disposed;
 
-        // Filtered view: ONLY Serial busses
-        private readonly ObservableCollection<BusConfig> _serialBuses = new();
-        private readonly ReadOnlyObservableCollection<BusConfig> _serialBusesRo;
-        public ReadOnlyObservableCollection<BusConfig> Buses => _serialBusesRo;
+        private readonly ObservableCollection<BusConfig> _modBuses = new();
+        private readonly ReadOnlyObservableCollection<BusConfig> _modBusesRo;
+        public ReadOnlyObservableCollection<BusConfig> Buses => _modBusesRo;
 
-        public ObservableCollection<string> Ports { get; } = new();
-
-        // Pre-filled BusId suggestions for touch UI
         public IReadOnlyList<string> BusIdOptions { get; } =
             Enumerable.Range(0, 8).Select(i => $"bus{i}").ToList();
 
@@ -42,7 +36,7 @@ namespace Flower.App.ViewModels
             set => this.RaiseAndSetIfChanged(ref _selected, value);
         }
 
-        // Editors for Add / Update
+        // Editors
         private string _editBusId = "bus0";
         public string EditBusId
         {
@@ -50,21 +44,35 @@ namespace Flower.App.ViewModels
             set => this.RaiseAndSetIfChanged(ref _editBusId, value);
         }
 
-        private string? _editPort;
-        public string? EditPort
+        private string? _editHost = "192.168.1.200";
+        public string? EditHost
+        {
+            get => _editHost;
+            set => this.RaiseAndSetIfChanged(ref _editHost, value);
+        }
+
+        private int _editPort = 502;
+        public int EditPort
         {
             get => _editPort;
             set => this.RaiseAndSetIfChanged(ref _editPort, value);
         }
 
-        private int _editBaud = 9600;
-        public int EditBaud
+        private byte _editUnitId = 1;
+        public byte EditUnitId
         {
-            get => _editBaud;
-            set => this.RaiseAndSetIfChanged(ref _editBaud, value);
+            get => _editUnitId;
+            set => this.RaiseAndSetIfChanged(ref _editUnitId, value);
         }
 
-        private string _status = "Configure serial busses, then connect.";
+        private int _editTimeoutMs = 2000;
+        public int EditTimeoutMs
+        {
+            get => _editTimeoutMs;
+            set => this.RaiseAndSetIfChanged(ref _editTimeoutMs, value);
+        }
+
+        private string _status = "Configure Modbus busses, then connect.";
         public string Status
         {
             get => _status;
@@ -72,52 +80,49 @@ namespace Flower.App.ViewModels
         }
 
         // Commands
-        public ReactiveCommand<Unit, Unit> RefreshPortsCommand { get; }
         public ReactiveCommand<Unit, Unit> SaveCommand { get; }
         public ReactiveCommand<Unit, Unit> AddCommand { get; }
         public ReactiveCommand<Unit, Unit> UpdateCommand { get; }
         public ReactiveCommand<Unit, Unit> DeleteCommand { get; }
         public ReactiveCommand<Unit, Unit> ConnectCommand { get; }
         public ReactiveCommand<Unit, Unit> DisconnectCommand { get; }
-
-        // Optional bulk helpers
+        public ReactiveCommand<Unit, Unit> TestCommand { get; }
         public ReactiveCommand<Unit, Unit> ConnectAllCommand { get; }
         public ReactiveCommand<Unit, Unit> DisconnectAllCommand { get; }
 
-        public ManageSerialBusesViewModel(
+        public ManageModBusesViewModel(
             IBusConfigService busCfg,
             IBusDirectory busDir,
-            IUiLogService? uiLog = null)
+            IUiLogService? uiLog = null,
+            IModBusConnectionTester? tester = null)
         {
             _busCfg = busCfg ?? throw new ArgumentNullException(nameof(busCfg));
             _busDir = busDir ?? throw new ArgumentNullException(nameof(busDir));
             _uiLog = uiLog;
+            _tester = tester;
 
-            _serialBusesRo = new ReadOnlyObservableCollection<BusConfig>(_serialBuses);
+            _modBusesRo = new ReadOnlyObservableCollection<BusConfig>(_modBuses);
 
-            // Initial fill + keep in sync
-            RefreshSerialList();
+            // Initial fill + keep in sync (ReadOnlyObservableCollection hides CollectionChanged; use interface)
+            RefreshModbusList();
             if (_busCfg.Buses is System.Collections.Specialized.INotifyCollectionChanged incc)
             {
                 _busCfgNotifier = incc;
                 _busCfgNotifier.CollectionChanged += OnBusCfgCollectionChanged;
             }
 
-            RefreshPortsCommand = ReactiveCommand.Create(RefreshPorts);
-
             SaveCommand = ReactiveCommand.CreateFromTask(async () =>
             {
                 await _busCfg.SaveAsync();
-                Status = $"Saved {Buses.Count} serial bus config(s).";
+                Status = $"Saved {Buses.Count} Modbus bus config(s).";
                 _uiLog?.Info(Status);
             });
 
             AddCommand = ReactiveCommand.CreateFromTask(async () =>
             {
-                var err = Validate(EditBusId, EditPort, EditBaud);
+                var err = Validate(EditBusId, EditHost, EditPort, EditUnitId, EditTimeoutMs);
                 if (err != null) { Status = err; _uiLog?.Error(err, new InvalidOperationException(err)); return; }
 
-                // IMPORTANT: ensure unique across ALL busses, not only serial
                 if (_busCfg.Buses.Any(b => string.Equals(b.BusId, EditBusId, StringComparison.OrdinalIgnoreCase)))
                 {
                     Status = $"BusId '{EditBusId}' already exists.";
@@ -126,12 +131,13 @@ namespace Flower.App.ViewModels
                 }
 
                 var bus = new BusConfig(EditBusId.Trim());
-                bus.CreateSerial(EditPort!.Trim(), EditBaud);
+                bus.CreateModbusTcp(EditHost!.Trim(), EditPort, EditUnitId);
+                bus.ModbusConnectTimeoutMs = EditTimeoutMs;
 
                 await _busCfg.AddAsync(bus);
                 await _busCfg.SaveAsync();
 
-                Status = $"Added {bus.BusId} (Serial {bus.Port} @ {bus.Baud}).";
+                Status = $"Added {bus.BusId} (Modbus TCP {bus.ModbusHost}:{bus.ModbusPort}, Unit {bus.ModbusUnitId}).";
                 _uiLog?.Info(Status);
 
                 SuggestNextFreeBusId();
@@ -142,17 +148,18 @@ namespace Flower.App.ViewModels
                 var selected = Selected;
                 if (selected is null) { Status = "No bus selected."; _uiLog?.Error(Status, new InvalidOperationException(Status)); return; }
 
-                var port = (EditPort ?? selected.Port);
-                var err = Validate(selected.BusId, port, EditBaud);
+                var host = EditHost ?? selected.ModbusHost;
+                var err = Validate(selected.BusId, host, EditPort, EditUnitId, EditTimeoutMs);
                 if (err != null) { Status = err; _uiLog?.Error(err, new InvalidOperationException(err)); return; }
 
-                // Force serial config
-                selected.BusType = BusType.SerialBus;
-                selected.Port = port!.Trim();
-                selected.Baud = EditBaud;
+                selected.BusType = BusType.ModbusTcp;
+                selected.ModbusHost = host!.Trim();
+                selected.ModbusPort = EditPort;
+                selected.ModbusUnitId = EditUnitId;
+                selected.ModbusConnectTimeoutMs = EditTimeoutMs;
 
                 selected.ConnectionStatus = ConnectionStatus.Disconnected;
-                await _busDir.DisconnectAsync(selected.BusId).ConfigureAwait(false); // best effort
+                await _busDir.DisconnectAsync(selected.BusId).ConfigureAwait(false);
 
                 await _busCfg.UpdateAsync(selected);
                 await _busCfg.SaveAsync();
@@ -166,7 +173,7 @@ namespace Flower.App.ViewModels
                 var selected = Selected;
                 if (selected is null) { Status = "No bus selected."; _uiLog?.Error(Status, new InvalidOperationException(Status)); return; }
 
-                await _busDir.DisconnectAsync(selected.BusId).ConfigureAwait(false); // best effort
+                await _busDir.DisconnectAsync(selected.BusId).ConfigureAwait(false);
                 await _busCfg.DeleteAsync(selected.BusId);
                 await _busCfg.SaveAsync();
 
@@ -189,7 +196,7 @@ namespace Flower.App.ViewModels
                     await _busCfg.UpdateAsync(selected);
                     await _busCfg.SaveAsync();
 
-                    Status = $"Connected {selected.BusId} → {selected.Port} @ {selected.Baud}.";
+                    Status = $"Connected {selected.BusId} → {selected.ModbusHost}:{selected.ModbusPort} (Unit {selected.ModbusUnitId}).";
                     _uiLog?.Info(Status);
                 }
                 catch (Exception ex)
@@ -224,17 +231,53 @@ namespace Flower.App.ViewModels
                 }
             });
 
+            TestCommand = ReactiveCommand.CreateFromTask(async () =>
+            {
+                var bus = Selected ?? new BusConfig(EditBusId.Trim());
+                bus.CreateModbusTcp((EditHost ?? bus.ModbusHost ?? "").Trim(), EditPort, EditUnitId);
+                bus.ModbusConnectTimeoutMs = EditTimeoutMs;
+
+                if (_tester is null)
+                {
+                    Status = "No Modbus tester service registered (IModBusConnectionTester).";
+                    _uiLog?.Error(Status, new InvalidOperationException(Status));
+                    return;
+                }
+
+                try
+                {
+                    var (ok, msg) = await _tester.TestAsync(bus);
+                    Status = msg;
+                    if (ok) _uiLog?.Info(msg);
+                    else _uiLog?.Error(msg, new InvalidOperationException(msg));
+                }
+                catch (Exception ex)
+                {
+                    Status = $"Test failed: {ex.Message}";
+                    _uiLog?.Error(Status, ex);
+                }
+            });
+
             ConnectAllCommand = ReactiveCommand.CreateFromTask(async () =>
             {
                 int ok = 0, fail = 0;
                 foreach (var b in Buses)
                 {
-                    try { await _busDir.ConnectAsync(b); b.ConnectionStatus = ConnectionStatus.Connected; ok++; }
-                    catch { b.ConnectionStatus = ConnectionStatus.Degraded; fail++; }
+                    try
+                    {
+                        await _busDir.ConnectAsync(b);
+                        b.ConnectionStatus = ConnectionStatus.Connected;
+                        ok++;
+                    }
+                    catch
+                    {
+                        b.ConnectionStatus = ConnectionStatus.Degraded;
+                        fail++;
+                    }
                 }
 
                 await _busCfg.SaveAsync();
-                Status = $"Connect all serial: {ok} ok, {fail} failed.";
+                Status = $"Connect all Modbus: {ok} ok, {fail} failed.";
                 _uiLog?.Info(Status);
             });
 
@@ -247,7 +290,7 @@ namespace Flower.App.ViewModels
                 }
 
                 await _busCfg.SaveAsync();
-                Status = "Disconnected all serial busses.";
+                Status = "Disconnected all Modbus busses.";
                 _uiLog?.Info(Status);
             });
 
@@ -256,139 +299,46 @@ namespace Flower.App.ViewModels
                 .Subscribe(x =>
                 {
                     EditBusId = x!.BusId;
-                    EditPort = x.Port;
-                    EditBaud = x.Baud;
+                    EditHost = x.ModbusHost;
+                    EditPort = x.ModbusPort;
+                    EditUnitId = x.ModbusUnitId;
+                    EditTimeoutMs = x.ModbusConnectTimeoutMs;
                 });
 
-            RefreshPorts();
             SuggestNextFreeBusId();
         }
 
         private void OnBusCfgCollectionChanged(object? sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
-            => RefreshSerialList();
+            => RefreshModbusList();
 
-        private void RefreshSerialList()
+        private void RefreshModbusList()
         {
-            _serialBuses.Clear();
-            foreach (var b in _busCfg.Buses.Where(x => x.BusType == BusType.SerialBus))
-                _serialBuses.Add(b);
+            _modBuses.Clear();
+            foreach (var b in _busCfg.Buses.Where(x => x.BusType == BusType.ModbusTcp))
+                _modBuses.Add(b);
 
-            if (Selected is not null && !_serialBuses.Contains(Selected))
-                Selected = _serialBuses.FirstOrDefault();
+            if (Selected is not null && !_modBuses.Contains(Selected))
+                Selected = _modBuses.FirstOrDefault();
         }
 
         private void SuggestNextFreeBusId()
         {
-            // Ensure uniqueness across ALL busses
             var used = _busCfg.Buses.Select(b => b.BusId).ToHashSet(StringComparer.OrdinalIgnoreCase);
             var suggestion = BusIdOptions.FirstOrDefault(opt => !used.Contains(opt)) ?? $"bus{used.Count}";
             EditBusId = suggestion;
         }
 
-        private static string? Validate(string? busId, string? port, int baud)
+        private static string? Validate(string? busId, string? host, int port, byte unitId, int timeoutMs)
         {
             if (string.IsNullOrWhiteSpace(busId)) return "BusId is required.";
             if (!busId.StartsWith("bus", StringComparison.OrdinalIgnoreCase)) return "BusId must start with 'bus'.";
             if (busId.Length < 4 || !int.TryParse(busId.AsSpan(3), out _)) return "BusId must look like 'bus0', 'bus1', …";
-            if (string.IsNullOrWhiteSpace(port)) return "Select a serial port.";
-            if (baud <= 0) return "Baud must be > 0.";
+
+            if (string.IsNullOrWhiteSpace(host)) return "Modbus Host (IP/DNS) is required.";
+            if (port <= 0 || port > 65535) return "Modbus port must be 1..65535.";
+            if (unitId < 1) return "UnitId must be >= 1.";
+            if (timeoutMs < 100) return "Timeout must be >= 100ms.";
             return null;
-        }
-
-        private void RefreshPorts()
-        {
-            var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-            // BCL
-            try
-            {
-                foreach (var p in SerialPort.GetPortNames())
-                    if (!string.IsNullOrWhiteSpace(p)) set.Add(p.Trim());
-            }
-            catch { /* ignore */ }
-
-            // Unix: add common device paths + stable symlinks
-            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            {
-                foreach (var dev in EnumerateUnixSerialPorts())
-                    set.Add(dev);
-            }
-
-            Ports.Clear();
-            foreach (var p in set.OrderBy(PortOrder).ThenBy(p => p)) Ports.Add(p);
-
-            if (Selected is not null && !string.IsNullOrWhiteSpace(Selected.Port) && !Ports.Contains(Selected.Port))
-                Ports.Add(Selected.Port);
-
-            if (Ports.Count == 0)
-            {
-                if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                    Status = "No serial ports found. On Linux, check /dev/ttyACM* or /dev/ttyUSB*, and that your user is in the 'dialout' (or 'uucp') group. Re-login after adding.";
-                else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-                    Status = "No serial ports found. On macOS, check /dev/tty.* or /dev/cu.* and USB driver permissions.";
-                else
-                    Status = "No serial ports found.";
-
-                _uiLog?.Info(Status);
-            }
-            else
-            {
-                Status = $"Found {Ports.Count} port(s): {string.Join(", ", Ports)}";
-                _uiLog?.Info(Status);
-            }
-        }
-
-        private static IEnumerable<string> EnumerateUnixSerialPorts()
-        {
-            foreach (var p in SafeGlob("/dev/serial/by-id/*")) yield return p;
-            foreach (var p in SafeGlob("/dev/ttyACM*")) yield return p;
-            foreach (var p in SafeGlob("/dev/ttyUSB*")) yield return p;
-            foreach (var p in SafeGlob("/dev/ttyS*")) yield return p;
-            foreach (var p in SafeGlob("/dev/tty.*")) yield return p; // macOS
-            foreach (var p in SafeGlob("/dev/cu.*")) yield return p;  // macOS
-        }
-
-        private static IEnumerable<string> SafeGlob(string pattern)
-        {
-            string? dir = null;
-            string? mask = null;
-            IEnumerable<string> results = Array.Empty<string>();
-
-            try
-            {
-                dir = Path.GetDirectoryName(pattern);
-                mask = Path.GetFileName(pattern);
-
-                if (!string.IsNullOrEmpty(dir) &&
-                    !string.IsNullOrEmpty(mask) &&
-                    Directory.Exists(dir))
-                {
-                    results = Directory.EnumerateFileSystemEntries(dir, mask);
-                }
-            }
-            catch
-            {
-                results = Array.Empty<string>();
-            }
-
-            foreach (var path in results)
-                yield return path;
-        }
-
-        private static int PortOrder(string name)
-        {
-            if (name.StartsWith("COM", StringComparison.OrdinalIgnoreCase) &&
-                int.TryParse(name.AsSpan(3), out var n))
-                return n;
-
-            if (name.StartsWith("/dev/serial/by-id/", StringComparison.Ordinal)) return 0;
-            if (name.StartsWith("/dev/ttyACM", StringComparison.Ordinal)) return 1;
-            if (name.StartsWith("/dev/ttyUSB", StringComparison.Ordinal)) return 2;
-            if (name.StartsWith("/dev/ttyS", StringComparison.Ordinal)) return 3;
-            if (name.StartsWith("/dev/tty.", StringComparison.Ordinal)) return 4; // macOS
-            if (name.StartsWith("/dev/cu.", StringComparison.Ordinal)) return 5;  // macOS
-
-            return int.MaxValue;
         }
 
         public void Close()
@@ -396,15 +346,19 @@ namespace Flower.App.ViewModels
             if (Selected is not null)
             {
                 EditBusId = Selected.BusId;
-                EditPort = Selected.Port;
-                EditBaud = Selected.Baud;
+                EditHost = Selected.ModbusHost;
+                EditPort = Selected.ModbusPort;
+                EditUnitId = Selected.ModbusUnitId;
+                EditTimeoutMs = Selected.ModbusConnectTimeoutMs;
                 Status = $"Reverted changes for {Selected.BusId}.";
             }
             else
             {
                 SuggestNextFreeBusId();
-                EditPort = Ports.FirstOrDefault();
-                EditBaud = 9600;
+                EditHost = "192.168.1.200";
+                EditPort = 502;
+                EditUnitId = 1;
+                EditTimeoutMs = 2000;
                 Status = "Reverted changes.";
             }
         }
