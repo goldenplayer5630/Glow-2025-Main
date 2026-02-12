@@ -61,8 +61,8 @@
         { "atMs": 57200, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 10, "durationMs": 700 } } },
 
         { "atMs": 60000, "event": { "priority": 1, "cmdId": "motor.open", "args": { } } },
-        { "atMs": 60000, "event": { "priority": 1, "cmdId": "led.ramp.in", "args": { "endIntensity": 40, "durationMs": 1700 } } },
-        { "atMs": 61700, "event": { "priority": 1, "cmdId": "led.ramp.out","args": { "endIntensity": 40, "durationMs": 1700 } } },
+        { "atMs": 60000, "event": { "priority": 1, "cmdId": "led.ramp.in", "args": { "endIntensity": 40, "durationMs": 1600 } } },
+        { "atMs": 61700, "event": { "priority": 1, "cmdId": "led.ramp.out","args": { "endIntensity": 40, "durationMs": 1600 } } },
 
         { "atMs": 77000, "event": { "priority": 1, "cmdId": "led.ramp.in",  "args": { "endIntensity": 70, "durationMs": 1100 } } },
         { "atMs": 76200, "event": { "priority": 1, "cmdId": "led.ramp.out", "args": { "endIntensity": 70, "durationMs": 1100 } } },

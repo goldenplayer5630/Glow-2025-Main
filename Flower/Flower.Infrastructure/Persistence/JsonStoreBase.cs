@@ -16,10 +16,12 @@ namespace Flower.Infrastructure.Persistence
             NullValueHandling = NullValueHandling.Ignore,
             DateParseHandling = DateParseHandling.None,
             FloatParseHandling = FloatParseHandling.Double,
-            ContractResolver = new DefaultContractResolver
-            {
-                NamingStrategy = new CamelCaseNamingStrategy()
-            }
+
+            // ✅ Force camelCase everywhere
+            ContractResolver = new CamelCasePropertyNamesContractResolver(),
+
+            // For records/enums:
+            Converters = { new Newtonsoft.Json.Converters.StringEnumConverter() }
         };
 
         // Default folder: <app>/json
